@@ -1,0 +1,653 @@
+
+FLOWDESK
+Project Architecture & Technical Documentation
+
+
+Version 1.0  •  June 2026
+Stack: Next.js 15 + Express.js + MongoDB
+Target: Developer • Student • Researcher
+
+1. Product Overview
+Flowdesk is a personal productivity platform combining Trello-style Kanban boards with Notion-style rich text notes. It is designed for three core user personas — Developers/Designers, Students, and Researchers — each getting a tailored experience within a shared architecture.
+
+1.1 Core Philosophy
+One app, three personas — same codebase, same data model, different UI modes
+Workspace-first — everything lives inside a Workspace, enabling future multi-user support
+Card = Task + Document — every Kanban card contains a full TipTap rich-text page
+Local-first storage — files stored locally in MVP, Cloudinary-ready for production
+Expandable schema — multi-user, sharing, and collaboration can be added without restructuring
+
+1.2 Persona Feature Matrix
+Feature
+Developer
+Student
+Researcher
+Kanban Board
+✓
+✓
+✓
+TipTap Card Notes
+✓
+✓
+✓
+Personal Notes
+✓
+✓
+✓
+Folder Organization
+✓
+✓
+✓
+Study Plan / Timeline
+–
+✓
+–
+Pomodoro Timer
+–
+✓
+–
+PDF Upload & Viewer
+–
+✓
+✓
+Reference Manager
+–
+–
+✓
+Export (PDF / CSV)
+✓
+✓
+✓
+GitHub / Figma Links
+✓
+–
+–
+Progress Tracker
+✓
+✓
+✓
+Activity Heatmap
+✓
+✓
+✓
+
+
+
+
+2. System Architecture
+2.1 High-Level Architecture
+Flowdesk follows a decoupled client-server architecture. The frontend and backend are separate applications that communicate through a REST API.
+
+Layer
+Technology
+Responsibility
+Frontend
+Next.js 15 (App Router)
+UI, routing, state, API calls
+Backend
+Express.js (Node.js)
+REST API, business logic, auth
+Database
+MongoDB + Mongoose
+Data persistence, relationships
+State Mgmt
+Zustand
+Global client state
+Server State
+TanStack Query
+API caching, sync, mutations
+Rich Text
+TipTap Editor
+Card notes + personal notes
+Drag & Drop
+@dnd-kit/core
+Kanban board drag interaction
+Auth
+JWT + Refresh Tokens
+Stateless authentication
+File Storage
+Multer → Local (MVP)
+PDF & image uploads
+Styling
+Tailwind CSS
+Utility-first styling
+
+
+2.2 Communication Flow
+The data flow for a typical user action (e.g. creating a card) follows this path:
+
+User interacts with the Next.js frontend (React component)
+Zustand store dispatches action → TanStack Query mutation fires
+Axios sends HTTP request to Express.js backend (port 5000)
+Express middleware: JWT verify → route handler → controller
+Controller calls Mongoose model → MongoDB reads/writes data
+Response flows back: MongoDB → Mongoose → Controller → Express → Axios → TanStack Query → Zustand → UI re-render
+
+2.3 Authentication Strategy
+Access Token: JWT, short-lived (15 minutes), stored in memory (Zustand)
+Refresh Token: Long-lived (7 days), stored in httpOnly cookie
+On access token expiry: silent refresh via /auth/refresh endpoint
+Logout: refresh token deleted from DB and cookie cleared
+Future multi-user: same auth system, just add workspace membership checks
+
+
+
+
+3. Project Structure
+3.1 Repository Layout
+The project uses a monorepo structure with two separate apps — client and server — in one Git repository.
+
+flowdesk/
+├── client/                    # Next.js 15 App Router
+└── server/                    # Express.js REST API
+
+3.2 Client Structure (Next.js 15)
+client/
+├── app/
+│   ├── (auth)/
+│   │   ├── login/page.jsx
+│   │   └── register/page.jsx
+│   ├── (dashboard)/
+│   │   ├── layout.jsx             # Sidebar + Topbar shell
+│   │   ├── page.jsx               # Home dashboard
+│   │   ├── workspace/[id]/page.jsx
+│   │   ├── project/[id]/
+│   │   │   ├── board/page.jsx     # Kanban view
+│   │   │   └── list/page.jsx      # List/table view
+│   │   ├── notes/
+│   │   │   ├── page.jsx           # All notes
+│   │   │   └── [id]/page.jsx      # Note editor
+│   │   └── settings/page.jsx
+│   └── layout.jsx
+├── components/
+│   ├── board/
+│   │   ├── KanbanBoard.jsx        # dnd-kit drag container
+│   │   ├── Column.jsx             # Droppable column
+│   │   └── Card.jsx               # Draggable card
+│   ├── editor/
+│   │   └── TipTapEditor.jsx       # Shared rich text editor
+│   ├── notes/
+│   │   ├── NoteList.jsx
+│   │   ├── NoteEditor.jsx
+│   │   └── FolderTree.jsx
+│   ├── ui/                        # Buttons, modals, inputs
+│   └── layout/
+│       ├── Sidebar.jsx
+│       └── Topbar.jsx
+├── lib/
+│   ├── api.js                     # Axios instance + interceptors
+│   └── utils.js
+├── store/
+│   ├── authStore.js               # Zustand: user + tokens
+│   ├── workspaceStore.js          # Zustand: active workspace
+│   └── boardStore.js              # Zustand: optimistic drag state
+└── hooks/
+    ├── useProjects.js             # TanStack Query hooks
+    ├── useCards.js
+    └── useNotes.js
+
+3.3 Server Structure (Express.js)
+server/
+├── src/
+│   ├── config/
+│   │   ├── db.js                  # Mongoose connection
+│   │   └── multer.js              # Local file upload config
+│   ├── models/
+│   │   ├── User.js
+│   │   ├── Workspace.js
+│   │   ├── Project.js
+│   │   ├── Column.js
+│   │   ├── Card.js
+│   │   ├── Note.js
+│   │   └── Folder.js
+│   ├── controllers/
+│   │   ├── auth.controller.js
+│   │   ├── workspace.controller.js
+│   │   ├── project.controller.js
+│   │   ├── column.controller.js
+│   │   ├── card.controller.js
+│   │   ├── note.controller.js
+│   │   └── folder.controller.js
+│   ├── routes/
+│   │   ├── auth.routes.js
+│   │   ├── workspace.routes.js
+│   │   ├── project.routes.js
+│   │   ├── column.routes.js
+│   │   ├── card.routes.js
+│   │   ├── note.routes.js
+│   │   └── folder.routes.js
+│   ├── middleware/
+│   │   ├── auth.middleware.js     # JWT verify
+│   │   ├── upload.middleware.js   # Multer handler
+│   │   └── error.middleware.js    # Global error handler
+│   └── app.js                     # Express setup
+├── uploads/                       # Local file storage (MVP)
+└── package.json
+
+
+
+
+4. Database Schema (MongoDB + Mongoose)
+All collections use MongoDB ObjectId references. The schema is designed to be workspace-scoped, making multi-user expansion straightforward — just add membership checks.
+
+4.1 users Collection
+Stores authentication and profile data for every user. The persona array allows users to switch between Developer, Student, and Researcher modes within the same account.
+
+{
+  _id:         ObjectId,
+  name:        String (required),
+  email:       String (required, unique, lowercase),
+  password:    String (bcrypt hashed),
+  avatar:      String (file path → cloudinary url later),
+  persona:     [String]  // ["developer", "student", "researcher"]
+                         // multi-select, user can have all three
+  refreshToken: String   // stored for refresh token rotation
+                         // null on logout
+  createdAt:   Date,
+  updatedAt:   Date
+}
+Key design decisions:
+Password is never returned in API responses (select: false on schema)
+persona is an array so one account can track dev work AND study plans
+refreshToken stored in DB enables token rotation and logout-all-devices in future
+
+4.2 workspaces Collection
+A Workspace is the top-level container. Every project, note, and folder belongs to a workspace. This is the key to future multi-user support — just extend the members array.
+
+{
+  _id:       ObjectId,
+  owner:     ObjectId → users (required),
+  name:      String (e.g. "My Dev Work", "PhD Research"),
+  type:      String  // "work" | "study" | "research" | "personal"
+  icon:      String  // emoji or icon name (e.g. "💻", "📚")
+  color:     String  // hex color for sidebar accent
+  members: [
+    {
+      user: ObjectId → users,
+      role: String  // "owner" | "member" | "viewer"
+    }
+  ],
+  createdAt: Date,
+  updatedAt: Date
+}
+Key design decisions:
+In MVP, members array has only the owner — no multi-user logic needed yet
+type field drives which UI modules are shown (study plan tab for "study" workspaces)
+Adding a new team member later = push to members array, no schema change
+
+4.3 projects Collection
+A Project lives inside a Workspace. It can be a Kanban board (for tasks), a Study Plan (for students), or a Research Project (for researchers). The type field controls which views are available.
+
+{
+  _id:         ObjectId,
+  workspace:   ObjectId → workspaces (required),
+  owner:       ObjectId → users (required),
+  name:        String (required),
+  description: String,
+  type:        String  // "kanban" | "study" | "research"
+  color:       String  // accent color shown in UI
+  tags:        [String],
+  progress:    Number  // 0-100, auto-calculated from cards
+  dueDate:     Date,
+  isArchived:  Boolean (default: false),
+  createdAt:   Date,
+  updatedAt:   Date
+}
+Key design decisions:
+"kanban" type → shows Columns + Cards view
+"study" type → shows Study Plan timeline + progress % per topic
+"research" type → shows research phases + reference manager
+progress is stored (not computed on every read) and updated when cards change
+
+4.4 columns Collection
+Columns represent the stages in a Kanban board (e.g. Todo → In Progress → Done). Each column belongs to one project. The position field is a floating-point number to support drag-and-drop reordering without updating all sibling positions.
+
+{
+  _id:       ObjectId,
+  project:   ObjectId → projects (required),
+  title:     String (required, e.g. "Todo", "In Progress", "Done"),
+  position:  Number   // drag-drop order — use float (1.0, 2.0, 3.0)
+                      // insert between: avg of neighbors (1.5)
+                      // reindex when gaps get too small
+  color:     String   // optional column accent color
+  createdAt: Date,
+  updatedAt: Date
+}
+
+4.5 cards Collection
+Cards are the core unit of Flowdesk. Each card is both a task (with status, priority, due date) and a document (with a full TipTap rich-text page). This is the Trello + Notion hybrid in one record.
+
+{
+  _id:       ObjectId,
+  column:    ObjectId → columns (required),
+  project:   ObjectId → projects (required),
+  title:     String (required),
+
+
+  // Notion-like document (TipTap JSON)
+  content:   Object   // TipTap editor JSON output
+                      // stored as Mixed type in Mongoose
+
+
+  priority:  String   // "low" | "medium" | "high" | "urgent"
+  tags:      [String],
+
+
+  // File attachments (local MVP → Cloudinary later)
+  attachments: [
+    {
+      name:  String,
+      path:  String  // local: "uploads/filename.pdf"
+                     // production: cloudinary URL
+      type:  String  // "pdf" | "image"
+      size:  Number  // bytes
+    }
+  ],
+
+
+  // External links (developer-specific)
+  links: [
+    {
+      label: String  // "Figma Design", "PR #42"
+      url:   String,
+      type:  String  // "github" | "figma" | "other"
+    }
+  ],
+
+
+  dueDate:     Date,
+  position:    Number   // float, same reorder strategy as columns
+  isCompleted: Boolean (default: false),
+  createdAt:   Date,
+  updatedAt:   Date
+}
+Key design decisions:
+content stored as Mongoose Mixed type — TipTap outputs JSON, we store it as-is
+position uses float strategy — no need to update all cards on every drag
+attachments array supports both local paths and Cloudinary URLs — migration is just updating the path string
+links array is optional — only rendered in Developer persona UI
+
+4.6 notes Collection
+Notes are standalone documents not tied to any card or project. This is the pure Notion side of Flowdesk — personal research notes, study notes, quick captures. They live in Folders and support the same TipTap editor as cards.
+
+{
+  _id:       ObjectId,
+  owner:     ObjectId → users (required),
+  workspace: ObjectId → workspaces (required),
+  folder:    ObjectId → folders (nullable)
+             // null = root level (no folder)
+
+
+  title:     String (required),
+  content:   Object   // TipTap JSON
+  type:      String   // "personal" | "research" | "study"
+  tags:      [String],
+
+
+  // File attachments (same structure as cards)
+  attachments: [
+    { name, path, type, size }
+  ],
+
+
+  // Research references (researcher persona only)
+  references: [
+    {
+      title:   String,  // paper/book title
+      authors: String,  // "Smith, J., Doe, A."
+      url:     String,
+      year:    Number,
+      journal: String   // optional
+    }
+  ],
+
+
+  isPinned:   Boolean (default: false),
+  isArchived: Boolean (default: false),
+  createdAt:  Date,
+  updatedAt:  Date
+}
+Key design decisions:
+references array is only populated for research-type notes — ignored in other personas
+isPinned lets users keep important notes at the top of the list
+folder: null means the note is at the root level of the workspace
+
+4.7 folders Collection
+Folders organize notes. They support nesting via the parentFolder self-reference, allowing a tree structure (e.g. Research > Papers > 2024).
+
+{
+  _id:          ObjectId,
+  owner:        ObjectId → users (required),
+  workspace:    ObjectId → workspaces (required),
+  name:         String (required),
+  parentFolder: ObjectId → folders (nullable)
+                // null = root folder
+                // ObjectId = nested inside another folder
+  createdAt:    Date,
+  updatedAt:    Date
+}
+
+
+
+
+5. API Endpoint Reference
+All endpoints except /auth/register and /auth/login require a valid JWT Bearer token in the Authorization header.
+
+5.1 Auth Routes — /api/auth
+Method
+Endpoint
+Description
+POST
+/api/auth/register
+Create new account
+POST
+/api/auth/login
+Login → returns access token + sets refresh cookie
+POST
+/api/auth/refresh
+Silent refresh → new access token from cookie
+POST
+/api/auth/logout
+Clear refresh token from DB + cookie
+GET
+/api/auth/me
+Get current user profile
+PATCH
+/api/auth/me
+Update name, avatar, persona
+
+
+5.2 Workspace Routes — /api/workspaces
+Method
+Endpoint
+Description
+GET
+/api/workspaces
+Get all workspaces for current user
+POST
+/api/workspaces
+Create new workspace
+GET
+/api/workspaces/:id
+Get single workspace by ID
+PATCH
+/api/workspaces/:id
+Update name, icon, color, type
+DELETE
+/api/workspaces/:id
+Delete workspace + all its data
+
+
+5.3 Project + Column + Card Routes
+Method
+Endpoint
+Description
+GET
+/api/projects
+Get all projects in a workspace
+POST
+/api/projects
+Create project
+PATCH
+/api/projects/:id
+Update project
+DELETE
+/api/projects/:id
+Delete project
+GET
+/api/columns?projectId=
+Get columns for a project
+POST
+/api/columns
+Create column
+PATCH
+/api/columns/:id
+Update title or color
+PATCH
+/api/columns/reorder
+Bulk reorder columns (drag-drop)
+DELETE
+/api/columns/:id
+Delete column + its cards
+GET
+/api/cards?columnId=
+Get cards in a column
+POST
+/api/cards
+Create card
+GET
+/api/cards/:id
+Get single card with full content
+PATCH
+/api/cards/:id
+Update card (title, content, etc)
+PATCH
+/api/cards/reorder
+Move card within or across columns
+DELETE
+/api/cards/:id
+Delete card
+POST
+/api/cards/:id/attachments
+Upload file to card
+DELETE
+/api/cards/:id/attachments/:fid
+Remove attachment
+
+
+5.4 Notes + Folder Routes
+Method
+Endpoint
+Description
+GET
+/api/notes
+Get all notes (filter by workspace, folder, tag)
+POST
+/api/notes
+Create note
+GET
+/api/notes/:id
+Get note with full TipTap content
+PATCH
+/api/notes/:id
+Update note content, title, tags
+DELETE
+/api/notes/:id
+Delete note
+POST
+/api/notes/:id/attachments
+Upload PDF/image to note
+GET
+/api/folders
+Get folder tree for workspace
+POST
+/api/folders
+Create folder
+PATCH
+/api/folders/:id
+Rename folder
+DELETE
+/api/folders/:id
+Delete folder (notes move to root)
+GET
+/api/search?q=
+Global search across cards + notes
+
+
+
+
+
+6. Build Phases
+Development is split into 7 phases. Each phase is self-contained and produces a working, testable increment.
+
+Phase
+Name
+What Gets Built
+Deliverable
+1
+Server + Auth
+Express setup, MongoDB connect, User model, JWT auth with refresh tokens, register/login/logout/me endpoints
+Working auth API
+2
+Workspace + Project
+Workspace & Project models, full CRUD endpoints, workspace switcher in sidebar
+Multi-workspace UI
+3
+Kanban Board
+Column + Card models, CRUD endpoints, dnd-kit drag-drop UI, card position reordering
+Interactive Kanban
+4
+TipTap Editor
+Card detail slide-over panel, TipTap rich text editor on cards, auto-save content to DB
+Card as document
+5
+Notes + Folders
+Note model, folder tree sidebar, standalone TipTap note editor, pin/archive
+Personal notes
+6
+File Upload
+Multer middleware, local file storage, PDF upload on cards + notes, file list UI
+File attachments
+7
+Dashboard + Search
+Home dashboard (today tasks, overdue, progress bars), global search across cards + notes
+Full app MVP
+
+
+6.1 Future Phases (Post-MVP)
+Phase 8: Multi-user support — invite members to workspace, role-based access
+Phase 9: Student module — Study Plan timeline view, Pomodoro timer, topic progress
+Phase 10: Researcher module — Reference manager, research phases, CSV export
+Phase 11: Cloudinary migration — swap local file paths to Cloudinary URLs
+Phase 12: Real-time collaboration — Socket.io for live card updates between users
+
+
+
+7. Key Technical Decisions
+
+Why MongoDB over PostgreSQL for this project?
+TipTap content is a nested JSON object — stores naturally as a MongoDB document
+attachments and links as embedded arrays avoids join tables
+Schema flexibility is useful in early phases when content structure may evolve
+Note: for complex multi-user queries later, PostgreSQL would be stronger — but MongoDB is the right call for MVP
+
+Why float positions for drag-and-drop?
+Integer positions (1, 2, 3...) require updating all sibling records on every reorder
+Float positions: insert between card 2.0 and 3.0 → assign 2.5. Only one DB write
+When gaps get too small (< 0.001), reindex all cards in the column
+
+Why TipTap for the editor?
+You already use it in bdnewsfeed CMS — same knowledge, no learning curve
+Outputs clean JSON (not HTML string) — easy to store, query, and export
+Extensible: add code blocks, mentions, file embeds as the app grows
+
+Why dnd-kit over react-beautiful-dnd?
+react-beautiful-dnd is deprecated and unmaintained since 2023
+dnd-kit is the current standard — better performance, accessibility, and TypeScript support
+You have prior exposure from the NRCS architecture work
+
+Multi-user expansion path
+Every collection already has owner: ObjectId and workspace: ObjectId
+Adding multi-user = add project_members checks in middleware, nothing else changes
+The members array in Workspace is already in the schema — just not enforced in MVP
+
