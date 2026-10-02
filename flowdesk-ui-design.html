@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Flowdesk — UI Design</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ═══════════════════════════════════════
+   DESIGN TOKENS (from Phase 4)
+═══════════════════════════════════════ */
+:root {
+  --brand-300: #a5b4fc; --brand-400: #818cf8;
+  --brand-500: #6366f1; --brand-600: #4f46e5;
+  --brand-700: #4338ca; --brand-900: #312e81; --brand-950: #1e1b4b;
+  --accent-400: #a78bfa; --accent-500: #8b5cf6; --accent-600: #7c3aed;
+  --success-500:#10b981; --success-600:#059669;
+  --warning-500:#f59e0b; --warning-600:#d97706;
+  --danger-500: #f43f5e; --danger-600: #e11d48;
+  --info-500:   #3b82f6;
+  --dev-color:      #4f46e5;
+  --student-color:  #10b981;
+  --research-color: #8b5cf6;
+  --gray-50:#f9fafb; --gray-100:#f3f4f6; --gray-200:#e5e7eb;
+  --gray-300:#d1d5db; --gray-400:#9ca3af; --gray-500:#6b7280;
+  --gray-600:#4b5563; --gray-700:#374151; --gray-800:#1f2937; --gray-900:#111827;
+  --surface-base:    #0f0f1a;
+  --surface-raised:  #13131f;
+  --surface-overlay: #1a1a2e;
+  --surface-border:  rgba(255,255,255,.07);
+  --surface-text:    rgba(255,255,255,.88);
+  --surface-muted:   rgba(255,255,255,.42);
+  --surface-subtle:  rgba(255,255,255,.08);
+  --font-display:'Plus Jakarta Sans',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --text-xs:11px; --text-sm:12px; --text-base:14px; --text-md:15px;
+  --text-lg:17px; --text-xl:20px; --text-2xl:24px; --text-3xl:30px;
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
+  --space-5:20px; --space-6:24px; --space-8:32px; --space-10:40px;
+  --radius-sm:6px; --radius-md:10px; --radius-lg:14px;
+  --radius-xl:20px; --radius-full:9999px;
+  --shadow-sm:0 1px 4px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.06);
+  --shadow-md:0 4px 12px rgba(0,0,0,.1),0 2px 6px rgba(0,0,0,.07);
+  --shadow-lg:0 8px 28px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.08);
+  --shadow-xl:0 20px 50px rgba(0,0,0,.22),0 8px 20px rgba(0,0,0,.12);
+  --shadow-brand:0 4px 16px rgba(99,102,241,.35);
+  --shadow-brand-lg:0 8px 28px rgba(99,102,241,.45);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --ease-spring:cubic-bezier(.34,1.56,.64,1);
+  --dur-fast:120ms; --dur-normal:200ms; --dur-slow:350ms;
+  --sidebar-w:240px; --topbar-h:60px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:#080810;color:var(--surface-text);min-height:100vh;font-size:var(--text-base);line-height:1.5;}
+
+/* ── Screen Nav ── */
+.screen-nav{
+  position:sticky;top:0;z-index:1000;
+  display:flex;align-items:center;gap:0;
+  background:#080810;border-bottom:1px solid var(--surface-border);
+  padding:0 20px; height:48px;
+}
+.screen-nav-brand{
+  font-family:var(--font-display);font-size:15px;font-weight:800;
+  background:linear-gradient(135deg,var(--brand-400),var(--accent-400));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-right:20px;white-space:nowrap;
+}
+.screen-tabs{display:flex;gap:2px;}
+.s-tab{
+  padding:6px 14px;border-radius:6px;font-size:12px;font-weight:500;
+  cursor:pointer;border:none;background:transparent;color:var(--surface-muted);
+  transition:all var(--dur-fast);white-space:nowrap;
+}
+.s-tab:hover{color:var(--surface-text);background:var(--surface-subtle);}
+.s-tab.active{color:#fff;background:rgba(99,102,241,.25);border:1px solid rgba(99,102,241,.3);}
+.screen-badge{
+  margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--surface-muted);white-space:nowrap;
+}
+
+/* ── Screen Wrapper ── */
+.screen{display:none;min-height:calc(100vh - 48px);}
+.screen.active{display:block;}
+.screen-label{
+  padding:16px 24px 0;font-size:10px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--brand-400);
+  margin-bottom:12px;
+}
+
+/* ═══════════════════════════════════════
+   SHARED APP SHELL
+═══════════════════════════════════════ */
+.app-shell{
+  display:grid;
+  grid-template-columns:var(--sidebar-w) 1fr;
+  grid-template-rows:var(--topbar-h) 1fr;
+  height:calc(100vh - 48px);
+}
+
+/* Topbar */
+.topbar{
+  grid-column:1/-1;
+  display:flex;align-items:center;
+  background:var(--surface-raised);
+  border-bottom:1px solid var(--surface-border);
+  padding:0;
+  position:relative;z-index:50;
+}
+.topbar-logo-zone{
+  width:var(--sidebar-w);display:flex;align-items:center;
+  padding:0 var(--space-4);height:100%;
+  border-right:1px solid var(--surface-border);flex-shrink:0;
+}
+.topbar-brand{
+  font-family:var(--font-display);font-size:17px;font-weight:800;
+  background:linear-gradient(135deg,var(--brand-400),var(--accent-400));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.topbar-center{flex:1;display:flex;align-items:center;padding:0 var(--space-5);}
+.search-bar{
+  display:flex;align-items:center;gap:var(--space-2);
+  padding:8px 14px;border-radius:var(--radius-md);
+  background:var(--surface-overlay);
+  border:1px solid var(--surface-border);
+  font-size:13px;color:var(--surface-muted);
+  width:320px;cursor:text;transition:border-color var(--dur-fast);
+}
+.search-bar:hover{border-color:rgba(255,255,255,.14);}
+.search-shortcut{
+  margin-left:auto;font-size:10px;font-family:var(--font-mono);
+  background:var(--surface-subtle);padding:2px 6px;
+  border-radius:4px;color:var(--surface-muted);
+}
+.topbar-right{display:flex;align-items:center;gap:var(--space-2);padding:0 var(--space-4);}
+.icon-btn{
+  width:34px;height:34px;border-radius:var(--radius-sm);border:none;cursor:pointer;
+  background:transparent;color:var(--surface-muted);font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--dur-fast);position:relative;
+}
+.icon-btn:hover{background:var(--surface-subtle);color:var(--surface-text);}
+.notif-badge{
+  position:absolute;top:4px;right:4px;width:7px;height:7px;
+  border-radius:50%;background:var(--danger-500);
+  border:1.5px solid var(--surface-raised);
+}
+.topbar-avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--brand-500),var(--accent-500));
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:#fff;cursor:pointer;
+  border:2px solid var(--surface-border);
+  transition:border-color var(--dur-fast);
+}
+.topbar-avatar:hover{border-color:var(--brand-500);}
+
+/* Topbar breadcrumb */
+.topbar-breadcrumb{
+  display:flex;align-items:center;gap:var(--space-2);
+  font-size:13px;color:var(--surface-muted);margin-left:var(--space-4);
+}
+.breadcrumb-sep{color:rgba(255,255,255,.2);}
+.breadcrumb-current{color:var(--surface-text);font-weight:600;}
+
+/* Sidebar */
+.sidebar{
+  grid-row:2;background:var(--surface-raised);
+  border-right:1px solid var(--surface-border);
+  display:flex;flex-direction:column;overflow-y:auto;
+  padding:var(--space-3) var(--space-2);
+}
+.sidebar-section{margin-bottom:var(--space-4);}
+.sidebar-label{
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--surface-muted);padding:var(--space-2) var(--space-2) var(--space-1);
+}
+.sidebar-item{
+  display:flex;align-items:center;gap:var(--space-2);
+  padding:7px var(--space-2);border-radius:var(--radius-sm);
+  font-size:13px;font-weight:500;color:var(--surface-muted);
+  cursor:pointer;transition:all var(--dur-fast);
+  text-decoration:none;position:relative;
+}
+.sidebar-item:hover{background:var(--surface-subtle);color:var(--surface-text);}
+.sidebar-item.active{
+  background:rgba(99,102,241,.12);color:var(--brand-300);font-weight:600;
+}
+.sidebar-item.active::before{
+  content:'';position:absolute;left:0;top:25%;bottom:25%;
+  width:2.5px;border-radius:2px;background:var(--brand-500);
+}
+.s-icon{font-size:15px;width:18px;text-align:center;flex-shrink:0;}
+.s-count{
+  margin-left:auto;font-size:10px;font-weight:700;
+  background:var(--danger-500);color:#fff;
+  padding:1px 5px;border-radius:var(--radius-full);min-width:16px;text-align:center;
+}
+.s-count.muted{background:var(--surface-subtle);color:var(--surface-muted);}
+
+/* Workspace chip */
+.ws-chip{
+  display:flex;align-items:center;gap:var(--space-2);
+  padding:8px var(--space-2);border-radius:var(--radius-sm);
+  background:var(--surface-overlay);border:1px solid var(--surface-border);
+  cursor:pointer;margin-bottom:var(--space-2);
+  transition:border-color var(--dur-fast);
+}
+.ws-chip:hover{border-color:rgba(99,102,241,.3);}
+.ws-dot{width:8px;height:8px;border-radius:3px;flex-shrink:0;}
+.ws-name{font-size:12px;font-weight:700;color:var(--surface-text);}
+.ws-type{font-size:10px;color:var(--surface-muted);}
+.ws-chevron{margin-left:auto;font-size:10px;color:var(--surface-muted);}
+
+/* Project item in sidebar */
+.proj-item{
+  display:flex;align-items:center;gap:var(--space-2);
+  padding:6px var(--space-2);border-radius:var(--radius-sm);
+  font-size:12px;font-weight:500;color:var(--surface-muted);
+  cursor:pointer;transition:all var(--dur-fast);
+}
+.proj-item:hover{background:var(--surface-subtle);color:var(--surface-text);}
+.proj-item.active{color:var(--surface-text);}
+.proj-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0;}
+
+.sidebar-divider{height:1px;background:var(--surface-border);margin:var(--space-2) var(--space-1);}
+.sidebar-footer{margin-top:auto;padding-top:var(--space-2);}
+.sidebar-add{
+  display:flex;align-items:center;gap:var(--space-2);
+  padding:6px var(--space-2);border-radius:var(--radius-sm);
+  font-size:12px;color:rgba(255,255,255,.28);
+  cursor:pointer;transition:all var(--dur-fast);
+}
+.sidebar-add:hover{background:var(--surface-subtle);color:var(--surface-muted);}
+
+/* Main area */
+.main{grid-row:2;background:var(--surface-base);overflow-y:auto;position:relative;}
+
+/* ─────────────────────────────────────
+   UTILITY
+───────────────────────────────────── */
+.flex{display:flex;}.flex-col{flex-direction:column;}
+.items-center{align-items:center;}.justify-between{justify-content:space-between;}
+.gap-1{gap:4px;}.gap-2{gap:8px;}.gap-3{gap:12px;}.gap-4{gap:16px;}
+.ml-auto{margin-left:auto;}
+.text-muted{color:var(--surface-muted);}
+.text-sm{font-size:12px;}.text-xs{font-size:11px;}
+.font-bold{font-weight:700;}.font-semibold{font-weight:600;}
+.badge{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 8px;border-radius:var(--radius-full);
+  font-size:10px;font-weight:700;line-height:1.4;
+}
+.badge-brand  {background:rgba(99,102,241,.18);color:var(--brand-300);}
+.badge-success{background:rgba(16,185,129,.15);color:#34d399;}
+.badge-warning{background:rgba(245,158,11,.15);color:#fbbf24;}
+.badge-danger {background:rgba(244,63,94,.15);color:#fb7185;}
+.badge-violet {background:rgba(139,92,246,.15);color:var(--accent-400);}
+.badge-gray   {background:var(--surface-subtle);color:var(--surface-muted);}
+.priority{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 7px;border-radius:4px;
+  font-size:10px;font-weight:700;letter-spacing:.04em;
+}
+.p-urgent{background:rgba(244,63,94,.12);color:#fb7185;border-left:2px solid #fb7185;}
+.p-high  {background:rgba(245,158,11,.12);color:#fbbf24;border-left:2px solid #fbbf24;}
+.p-medium{background:rgba(99,102,241,.12);color:var(--brand-300);border-left:2px solid var(--brand-400);}
+.p-low   {background:rgba(16,185,129,.10);color:#34d399;border-left:2px solid #34d399;}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 16px;border-radius:var(--radius-md);
+  font-size:13px;font-weight:600;font-family:var(--font-body);
+  cursor:pointer;border:none;transition:all var(--dur-normal) var(--ease-out);
+  line-height:1;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--brand-600),var(--accent-600));
+  color:#fff;box-shadow:var(--shadow-brand);
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:var(--shadow-brand-lg);}
+.btn-ghost{background:transparent;color:var(--surface-muted);border:1px solid var(--surface-border);}
+.btn-ghost:hover{background:var(--surface-subtle);color:var(--surface-text);}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:var(--radius-sm);}
+.btn-icon{padding:7px;border-radius:var(--radius-sm);}
+.avatar{
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:700;color:#fff;flex-shrink:0;
+  background:linear-gradient(135deg,var(--brand-500),var(--accent-500));
+}
+.progress-bar{height:4px;background:var(--surface-subtle);border-radius:var(--radius-full);overflow:hidden;}
+.progress-fill{height:100%;border-radius:var(--radius-full);}
+.p-fill-brand  {background:linear-gradient(90deg,var(--brand-500),var(--accent-500));}
+.p-fill-success{background:var(--success-500);}
+.p-fill-warning{background:var(--warning-500);}
+.card{
+  background:var(--surface-raised);border:1px solid var(--surface-border);
+  border-radius:var(--radius-lg);
+}
+.card:hover{border-color:rgba(99,102,241,.2);}
+.input{
+  padding:9px 12px;border-radius:var(--radius-md);
+  border:1.5px solid var(--surface-border);
+  background:var(--surface-overlay);color:var(--surface-text);
+  font-size:13px;font-family:var(--font-body);outline:none;
+  transition:border-color var(--dur-fast),box-shadow var(--dur-fast);
+}
+.input:focus{border-color:var(--brand-500);box-shadow:0 0 0 3px rgba(99,102,241,.15);}
+.input::placeholder{color:var(--surface-muted);}
+.toggle{
+  position:relative;width:42px;height:23px;cursor:pointer;
+  display:inline-flex;align-items:center;
+}
+.toggle input{opacity:0;position:absolute;}
+.toggle-track{
+  width:100%;height:100%;border-radius:var(--radius-full);
+  background:var(--surface-subtle);border:1px solid var(--surface-border);
+  transition:background var(--dur-normal);
+}
+.toggle input:checked~.toggle-track{background:var(--brand-600);border-color:var(--brand-600);}
+.toggle-thumb{
+  position:absolute;width:17px;height:17px;border-radius:50%;
+  background:#fff;box-shadow:var(--shadow-sm);left:3px;
+  transition:left var(--dur-normal) var(--ease-spring);
+}
+.toggle input:checked~.toggle-thumb{left:22px;}
+.skeleton{
+  background:linear-gradient(90deg,var(--surface-subtle) 25%,rgba(255,255,255,.07) 50%,var(--surface-subtle) 75%);
+  background-size:200% 100%;animation:shimmer 1.6s infinite;border-radius:4px;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.divider{height:1px;background:var(--surface-border);}
+
+/* ═══════════════════════════════════════
+   SCREEN 1 — AUTH
+═══════════════════════════════════════ */
+.auth-shell{
+  min-height:calc(100vh - 48px);
+  background:var(--surface-base);
+  display:flex;align-items:center;justify-content:center;
+  padding:var(--space-8);
+  position:relative;overflow:hidden;
+}
+/* Background orbs */
+.auth-shell::before{
+  content:'';position:absolute;top:-120px;left:-80px;
+  width:500px;height:500px;border-radius:50%;
+  background:radial-gradient(circle,rgba(99,102,241,.12) 0%,transparent 65%);
+  pointer-events:none;
+}
+.auth-shell::after{
+  content:'';position:absolute;bottom:-100px;right:-60px;
+  width:400px;height:400px;border-radius:50%;
+  background:radial-gradient(circle,rgba(139,92,246,.1) 0%,transparent 65%);
+  pointer-events:none;
+}
+.auth-wrap{
+  display:grid;grid-template-columns:1fr 1fr;
+  width:100%;max-width:960px;border-radius:var(--radius-xl);
+  overflow:hidden;box-shadow:var(--shadow-xl);
+  border:1px solid var(--surface-border);
+  position:relative;z-index:1;
+}
+
+/* Auth left */
+.auth-left{
+  background:linear-gradient(155deg,#1a1540 0%,#0f0f2e 50%,#130d2a 100%);
+  padding:48px 44px;display:flex;flex-direction:column;
+  justify-content:space-between;position:relative;overflow:hidden;
+}
+.auth-left-glow1{
+  position:absolute;top:-60px;right:-60px;
+  width:260px;height:260px;border-radius:50%;
+  background:radial-gradient(circle,rgba(99,102,241,.3) 0%,transparent 70%);
+}
+.auth-left-glow2{
+  position:absolute;bottom:-40px;left:-40px;
+  width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(139,92,246,.2) 0%,transparent 70%);
+}
+.auth-brand-mark{position:relative;z-index:1;}
+.auth-brand-name{
+  font-family:var(--font-display);font-size:24px;font-weight:800;
+  background:linear-gradient(135deg,#a5b4fc,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.auth-brand-tag{font-size:12px;color:rgba(255,255,255,.35);margin-top:3px;}
+.auth-hero{position:relative;z-index:1;}
+.auth-hero h2{
+  font-family:var(--font-display);font-size:28px;font-weight:800;
+  color:#fff;line-height:1.25;margin-bottom:14px;
+}
+.auth-hero h2 span{
+  background:linear-gradient(135deg,var(--brand-300),var(--accent-400));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.auth-hero p{font-size:13px;color:rgba(255,255,255,.5);line-height:1.7;}
+.auth-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:20px;}
+.auth-pill{
+  padding:5px 12px;border-radius:var(--radius-full);font-size:11px;font-weight:500;
+  background:rgba(255,255,255,.07);color:rgba(255,255,255,.65);
+  border:1px solid rgba(255,255,255,.1);
+}
+.auth-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;position:relative;z-index:1;}
+.auth-stat-val{
+  font-family:var(--font-display);font-size:28px;font-weight:800;
+  background:linear-gradient(135deg,var(--brand-300),var(--accent-400));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.auth-stat-label{font-size:10px;color:rgba(255,255,255,.35);margin-top:2px;}
+
+/* Auth right */
+.auth-right{
+  background:var(--surface-raised);padding:48px 44px;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.auth-tab-row{
+  display:flex;background:var(--surface-overlay);
+  border-radius:var(--radius-md);padding:3px;
+  width:fit-content;margin-bottom:32px;
+  border:1px solid var(--surface-border);
+}
+.auth-tab{
+  padding:7px 22px;border-radius:8px;font-size:13px;font-weight:500;
+  cursor:pointer;border:none;background:transparent;
+  color:var(--surface-muted);transition:all var(--dur-fast);
+  font-family:var(--font-body);
+}
+.auth-tab.active{background:var(--brand-600);color:#fff;font-weight:600;box-shadow:var(--shadow-brand);}
+.auth-title{font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--surface-text);margin-bottom:4px;}
+.auth-sub{font-size:13px;color:var(--surface-muted);margin-bottom:28px;}
+.form-field{margin-bottom:16px;}
+.form-label{font-size:12px;font-weight:600;color:rgba(255,255,255,.65);display:block;margin-bottom:6px;}
+.form-input{
+  width:100%;padding:10px 13px;border-radius:var(--radius-md);
+  border:1.5px solid var(--surface-border);
+  background:var(--surface-overlay);color:var(--surface-text);
+  font-size:14px;font-family:var(--font-body);outline:none;
+  transition:border-color var(--dur-fast),box-shadow var(--dur-fast);
+}
+.form-input:focus{border-color:var(--brand-500);box-shadow:0 0 0 3px rgba(99,102,241,.15);}
+.form-input.focused{border-color:var(--brand-500);box-shadow:0 0 0 3px rgba(99,102,241,.15);}
+.form-input::placeholder{color:var(--surface-muted);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.auth-persona-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;}
+.auth-persona-card{
+  padding:12px 8px;border-radius:var(--radius-md);
+  border:1.5px solid var(--surface-border);
+  background:var(--surface-overlay);cursor:pointer;text-align:center;
+  transition:all var(--dur-fast);
+}
+.auth-persona-card:hover{border-color:rgba(99,102,241,.3);background:rgba(99,102,241,.06);}
+.auth-persona-card.selected{border-color:var(--brand-500);background:rgba(99,102,241,.1);}
+.persona-emoji{font-size:20px;margin-bottom:4px;}
+.persona-name{font-size:11px;font-weight:600;color:var(--surface-muted);}
+.auth-persona-card.selected .persona-name{color:var(--brand-300);}
+.auth-btn{
+  width:100%;padding:12px;border-radius:var(--radius-md);
+  background:linear-gradient(135deg,var(--brand-600),var(--accent-600));
+  color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;
+  font-family:var(--font-body);box-shadow:var(--shadow-brand);
+  transition:all var(--dur-normal) var(--ease-out);
+}
+.auth-btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-brand-lg);}
+.auth-divider{
+  display:flex;align-items:center;gap:12px;
+  margin:18px 0;color:var(--surface-muted);font-size:12px;
+}
+.auth-divider::before,.auth-divider::after{
+  content:'';flex:1;height:1px;background:var(--surface-border);
+}
+.auth-google{
+  width:100%;padding:10px;border-radius:var(--radius-md);
+  border:1.5px solid var(--surface-border);background:var(--surface-overlay);
+  color:var(--surface-text);font-size:13px;font-weight:500;
+  cursor:pointer;font-family:var(--font-body);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:border-color var(--dur-fast);
+}
+.auth-google:hover{border-color:rgba(255,255,255,.18);}
+.auth-footer{
+  margin-top:24px;text-align:center;
+  font-size:12px;color:var(--surface-muted);
+}
+.auth-footer a{color:var(--brand-400);font-weight:600;text-decoration:none;}
+.auth-footer a:hover{color:var(--brand-300);}
+.auth-forgot{font-size:12px;color:var(--brand-400);text-decoration:none;font-weight:500;}
+.auth-forgot:hover{color:var(--brand-300);}
+/* password eye */
+.input-wrap{position:relative;}
+.input-eye{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  font-size:14px;cursor:pointer;color:var(--surface-muted);
+}
+
+/* ═══════════════════════════════════════
+   SCREEN 2 — DASHBOARD
+═══════════════════════════════════════ */
+.dash-content{padding:var(--space-8) var(--space-10);overflow-y:auto;height:100%;}
+.dash-greeting{
+  font-family:var(--font-display);font-size:22px;font-weight:800;
+  color:var(--surface-text);margin-bottom:4px;
+}
+.dash-date{font-size:13px;color:var(--surface-muted);margin-bottom:28px;}
+/* Stat cards */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stat-card{
+  padding:18px 20px;border-radius:var(--radius-lg);
+  background:var(--surface-raised);border:1px solid var(--surface-border);
+  position:relative;overflow:hidden;
+  transition:border-color var(--dur-normal),transform var(--dur-normal) var(--ease-out);
+}
+.stat-card:hover{border-color:rgba(99,102,241,.25);transform:translateY(-2px);}
+.stat-card-accent{position:absolute;top:0;left:0;right:0;height:2px;}
+.stat-label{font-size:11px;font-weight:600;color:var(--surface-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.stat-value{font-family:var(--font-display);font-size:30px;font-weight:800;color:var(--surface-text);line-height:1;}
+.stat-sub{font-size:11px;color:var(--surface-muted);margin-top:6px;display:flex;align-items:center;gap:4px;}
+.trend-up{color:var(--success-500);}.trend-down{color:var(--danger-500);}
+/* Two column */
+.dash-cols{display:grid;grid-template-columns:1fr 320px;gap:16px;}
+/* Card panel */
+.panel{background:var(--surface-raised);border:1px solid var(--surface-border);border-radius:var(--radius-lg);overflow:hidden;}
+.panel-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;border-bottom:1px solid var(--surface-border);
+}
+.panel-title{font-size:13px;font-weight:700;color:var(--surface-text);}
+.panel-action{font-size:12px;color:var(--brand-400);cursor:pointer;font-weight:500;}
+.panel-action:hover{color:var(--brand-300);}
+/* Task list */
+.task-item{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 18px;border-bottom:1px solid rgba(255,255,255,.04);
+  transition:background var(--dur-fast);cursor:pointer;
+}
+.task-item:last-child{border-bottom:none;}
+.task-item:hover{background:var(--surface-subtle);}
+.task-check{
+  width:17px;height:17px;border-radius:5px;flex-shrink:0;
+  border:1.5px solid var(--surface-border);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--dur-fast);
+}
+.task-check.done{background:var(--brand-600);border-color:var(--brand-600);}
+.task-check.done::after{content:'✓';font-size:10px;color:#fff;font-weight:700;}
+.task-text{font-size:13px;color:var(--surface-text);flex:1;line-height:1.35;}
+.task-text.done{text-decoration:line-through;color:var(--surface-muted);}
+.task-due{font-size:11px;color:var(--surface-muted);white-space:nowrap;}
+.task-due.overdue{color:var(--danger-500);font-weight:600;}
+/* Project cards */
+.proj-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px;}
+.proj-card{
+  padding:13px;border-radius:var(--radius-md);
+  border:1px solid var(--surface-border);background:var(--surface-overlay);
+  cursor:pointer;transition:all var(--dur-fast);
+}
+.proj-card:hover{border-color:rgba(99,102,241,.3);background:rgba(99,102,241,.05);}
+.proj-card-top{display:flex;align-items:center;gap:7px;margin-bottom:10px;}
+.proj-dot-box{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+.proj-name{font-size:12px;font-weight:700;color:var(--surface-text);}
+.proj-type{font-size:10px;color:var(--surface-muted);}
+/* Heatmap */
+.heatmap-wrap{padding:16px;}
+.heatmap-grid{display:flex;gap:3px;}
+.hm-col{display:flex;flex-direction:column;gap:3px;}
+.hm-cell{width:11px;height:11px;border-radius:2px;background:var(--surface-subtle);}
+.hm-1{background:rgba(99,102,241,.2);}
+.hm-2{background:rgba(99,102,241,.45);}
+.hm-3{background:rgba(99,102,241,.7);}
+.hm-4{background:var(--brand-500);}
+/* Quick capture */
+.qc-wrap{padding:14px;}
+.qc-textarea{
+  width:100%;padding:10px 12px;border-radius:var(--radius-md);
+  border:1.5px solid var(--surface-border);background:var(--surface-overlay);
+  color:var(--surface-text);font-size:13px;font-family:var(--font-body);
+  resize:none;outline:none;height:72px;line-height:1.5;
+  transition:border-color var(--dur-fast);
+}
+.qc-textarea::placeholder{color:var(--surface-muted);}
+.qc-textarea:focus{border-color:var(--brand-500);}
+/* Recent notes */
+.note-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 18px;border-bottom:1px solid rgba(255,255,255,.04);
+  cursor:pointer;transition:background var(--dur-fast);
+}
+.note-item:hover{background:var(--surface-subtle);}
+.note-item:last-child{border-bottom:none;}
+.note-title{font-size:13px;color:var(--surface-text);flex:1;}
+.note-time{font-size:11px;color:var(--surface-muted);}
+
+/* ═══════════════════════════════════════
+   SCREEN 3 — KANBAN BOARD
+═══════════════════════════════════════ */
+.board-topbar-extra{
+  display:flex;align-items:center;gap:var(--space-2);
+  padding:0 var(--space-5);margin-left:auto;
+}
+.view-toggle{
+  display:flex;background:var(--surface-overlay);border-radius:var(--radius-sm);
+  padding:3px;border:1px solid var(--surface-border);gap:2px;
+}
+.view-btn{
+  padding:5px 10px;border-radius:5px;font-size:11px;font-weight:600;
+  cursor:pointer;border:none;background:transparent;color:var(--surface-muted);
+  transition:all var(--dur-fast);font-family:var(--font-body);
+}
+.view-btn.active{background:var(--brand-600);color:#fff;}
+.board-main{height:100%;display:flex;flex-direction:column;overflow:hidden;}
+.board-header{
+  padding:18px var(--space-5) 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;border-bottom:1px solid var(--surface-border);
+}
+.board-title{font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--surface-text);}
+.board-meta{font-size:12px;color:var(--surface-muted);margin-top:2px;}
+.board-actions{display:flex;align-items:center;gap:var(--space-2);}
+.filter-chip{
+  display:flex;align-items:center;gap:5px;
+  padding:5px 10px;border-radius:var(--radius-full);
+  font-size:11px;font-weight:500;color:var(--surface-muted);
+  background:var(--surface-overlay);border:1px solid var(--surface-border);
+  cursor:pointer;transition:all var(--dur-fast);
+}
+.filter-chip:hover{border-color:rgba(99,102,241,.3);color:var(--brand-300);}
+.filter-chip.active{border-color:var(--brand-500);color:var(--brand-300);background:rgba(99,102,241,.08);}
+/* Columns */
+.board-scroll{flex:1;overflow-x:auto;overflow-y:hidden;padding:18px var(--space-5) var(--space-5);}
+.board-cols{display:flex;gap:14px;height:100%;align-items:flex-start;}
+.kanban-col{
+  width:272px;flex-shrink:0;
+  display:flex;flex-direction:column;
+  background:var(--surface-overlay);
+  border-radius:var(--radius-lg);border:1px solid var(--surface-border);
+  max-height:calc(100% - 4px);
+}
+.kanban-col-header{
+  padding:12px 14px;display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--surface-border);flex-shrink:0;
+  position:relative;
+}
+.kanban-col-header::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2.5px;
+  border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+}
+.col-todo .kanban-col-header::before{background:var(--surface-muted);}
+.col-progress .kanban-col-header::before{background:var(--brand-500);}
+.col-review .kanban-col-header::before{background:var(--warning-500);}
+.col-done .kanban-col-header::before{background:var(--success-500);}
+.col-title{font-size:12px;font-weight:700;color:var(--surface-text);}
+.col-count{
+  font-size:10px;font-weight:700;padding:1px 6px;
+  border-radius:var(--radius-full);background:var(--surface-subtle);color:var(--surface-muted);
+}
+.col-add{margin-left:auto;font-size:16px;color:var(--surface-muted);cursor:pointer;line-height:1;transition:color var(--dur-fast);}
+.col-add:hover{color:var(--surface-text);}
+.kanban-col-body{padding:10px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px;}
+/* Kanban card */
+.k-card{
+  background:var(--surface-raised);border:1px solid var(--surface-border);
+  border-radius:var(--radius-md);padding:12px;cursor:grab;
+  transition:all var(--dur-normal) var(--ease-out);
+  position:relative;
+}
+.k-card:hover{border-color:rgba(99,102,241,.3);transform:translateY(-1px);box-shadow:var(--shadow-md);}
+.k-card.dragging{opacity:.5;transform:scale(.98);box-shadow:var(--shadow-lg);}
+.k-card-accent{
+  position:absolute;left:0;top:0;bottom:0;width:2.5px;
+  border-radius:var(--radius-md) 0 0 var(--radius-md);
+}
+.k-card-inner{padding-left:8px;}
+.k-card-title{font-size:13px;font-weight:600;color:var(--surface-text);line-height:1.4;margin-bottom:8px;}
+.k-card-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+.k-card-footer{display:flex;align-items:center;justify-content:space-between;}
+.k-card-due{font-size:10px;color:var(--surface-muted);}
+.k-card-due.over{color:var(--danger-500);font-weight:600;}
+.k-avatar{width:20px;height:20px;border-radius:50%;font-size:8px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--brand-500),var(--accent-500));}
+/* Add card placeholder */
+.add-card{
+  padding:10px;border-radius:var(--radius-md);
+  border:1px dashed rgba(255,255,255,.1);color:var(--surface-muted);
+  font-size:12px;cursor:pointer;text-align:center;
+  transition:all var(--dur-fast);
+}
+.add-card:hover{border-color:rgba(99,102,241,.3);color:var(--brand-400);background:rgba(99,102,241,.04);}
+/* Add column */
+.add-col{
+  width:248px;flex-shrink:0;
+  padding:14px;border-radius:var(--radius-lg);
+  border:1.5px dashed rgba(255,255,255,.08);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;cursor:pointer;transition:all var(--dur-fast);color:var(--surface-muted);
+  font-size:13px;height:80px;
+}
+.add-col:hover{border-color:rgba(99,102,241,.3);color:var(--brand-400);background:rgba(99,102,241,.03);}
+
+/* Card Slide-Over */
+.slideover-backdrop{
+  position:absolute;inset:0;background:rgba(0,0,0,.4);
+  backdrop-filter:blur(2px);z-index:40;
+}
+.slideover{
+  position:absolute;top:0;right:0;bottom:0;
+  width:52%;background:var(--surface-raised);
+  border-left:1px solid var(--surface-border);
+  z-index:50;display:flex;flex-direction:column;
+  box-shadow:-8px 0 32px rgba(0,0,0,.25);
+}
+.slideover-header{
+  padding:18px 22px;border-bottom:1px solid var(--surface-border);
+  display:flex;align-items:flex-start;gap:12px;flex-shrink:0;
+}
+.slideover-close{
+  width:28px;height:28px;border-radius:var(--radius-sm);
+  background:var(--surface-subtle);border:none;cursor:pointer;
+  color:var(--surface-muted);font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all var(--dur-fast);
+}
+.slideover-close:hover{background:rgba(244,63,94,.15);color:var(--danger-500);}
+.slideover-title-input{
+  flex:1;background:transparent;border:none;outline:none;
+  font-family:var(--font-display);font-size:18px;font-weight:800;
+  color:var(--surface-text);resize:none;line-height:1.3;
+}
+.slideover-meta{
+  display:flex;align-items:center;gap:var(--space-3);
+  padding:12px 22px;border-bottom:1px solid var(--surface-border);
+  flex-shrink:0;flex-wrap:wrap;
+}
+.meta-item{display:flex;align-items:center;gap:6px;font-size:12px;}
+.meta-label{color:var(--surface-muted);font-weight:500;}
+.meta-val{color:var(--surface-text);font-weight:600;}
+.slideover-body{flex:1;overflow-y:auto;padding:20px 22px;}
+.editor-toolbar{
+  display:flex;align-items:center;gap:2px;flex-wrap:wrap;
+  padding:8px 10px;border-radius:var(--radius-md);
+  background:var(--surface-overlay);border:1px solid var(--surface-border);
+  margin-bottom:14px;
+}
+.toolbar-btn{
+  width:28px;height:28px;border-radius:5px;border:none;cursor:pointer;
+  background:transparent;color:var(--surface-muted);font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--dur-fast);font-family:var(--font-body);
+}
+.toolbar-btn:hover{background:var(--surface-subtle);color:var(--surface-text);}
+.toolbar-btn.active{background:rgba(99,102,241,.2);color:var(--brand-300);}
+.toolbar-sep{width:1px;height:18px;background:var(--surface-border);margin:0 4px;}
+.editor-area{
+  min-height:240px;font-size:14px;line-height:1.75;color:rgba(255,255,255,.75);
+}
+.editor-area p{margin-bottom:10px;}
+.editor-area h3{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--surface-text);margin:16px 0 8px;}
+.editor-area ul{padding-left:18px;margin-bottom:10px;}
+.editor-area li{margin-bottom:4px;}
+.editor-area code{font-family:var(--font-mono);font-size:12px;background:var(--surface-overlay);padding:1px 5px;border-radius:3px;color:var(--brand-300);}
+.slideover-footer{
+  padding:12px 22px;border-top:1px solid var(--surface-border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+
+/* ═══════════════════════════════════════
+   SCREEN 4 — NOTE EDITOR
+═══════════════════════════════════════ */
+.notes-shell{
+  display:grid;grid-template-columns:220px 1fr;
+  height:100%;
+}
+.notes-sidebar{
+  background:var(--surface-raised);border-right:1px solid var(--surface-border);
+  display:flex;flex-direction:column;padding:14px 10px;overflow-y:auto;
+}
+.notes-sidebar-title{
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--surface-muted);padding:4px 6px 8px;
+}
+.folder-item{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 8px;border-radius:var(--radius-sm);
+  font-size:12px;font-weight:500;color:var(--surface-muted);
+  cursor:pointer;transition:all var(--dur-fast);
+}
+.folder-item:hover{background:var(--surface-subtle);color:var(--surface-text);}
+.folder-item.active{background:rgba(99,102,241,.1);color:var(--brand-300);}
+.folder-icon{font-size:13px;width:16px;text-align:center;}
+.folder-sub{padding-left:22px;}
+.note-list-item{
+  display:flex;flex-direction:column;gap:2px;
+  padding:8px 8px;border-radius:var(--radius-sm);
+  cursor:pointer;transition:all var(--dur-fast);
+  border:1px solid transparent;margin-bottom:2px;
+}
+.note-list-item:hover{background:var(--surface-subtle);}
+.note-list-item.active{background:rgba(99,102,241,.08);border-color:rgba(99,102,241,.2);}
+.note-list-title{font-size:12px;font-weight:600;color:var(--surface-text);}
+.note-list-preview{font-size:11px;color:var(--surface-muted);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.note-list-meta{font-size:10px;color:rgba(255,255,255,.25);margin-top:2px;}
+/* Editor main */
+.note-editor-main{display:flex;flex-direction:column;height:100%;overflow:hidden;}
+.note-editor-topbar{
+  padding:12px 32px;border-bottom:1px solid var(--surface-border);
+  display:flex;align-items:center;gap:12px;flex-shrink:0;
+}
+.note-breadcrumb{font-size:12px;color:var(--surface-muted);}
+.note-breadcrumb span{color:var(--surface-text);font-weight:600;}
+.note-actions{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.note-status{font-size:11px;color:var(--surface-muted);font-style:italic;}
+.note-editor-body{flex:1;overflow-y:auto;padding:40px 80px;}
+.note-title-input{
+  font-family:var(--font-display);font-size:34px;font-weight:800;
+  color:var(--surface-text);border:none;outline:none;background:transparent;
+  width:100%;margin-bottom:10px;line-height:1.2;resize:none;
+}
+.note-tags-row{display:flex;align-items:center;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+.note-tag-chip{
+  padding:3px 10px;border-radius:var(--radius-full);
+  font-size:11px;font-weight:600;
+  background:rgba(99,102,241,.1);color:var(--brand-400);
+  border:1px solid rgba(99,102,241,.2);cursor:pointer;
+}
+.note-tag-add{
+  padding:3px 10px;border-radius:var(--radius-full);
+  font-size:11px;color:var(--surface-muted);cursor:pointer;
+  border:1px dashed rgba(255,255,255,.1);
+}
+.note-tag-add:hover{border-color:rgba(99,102,241,.3);color:var(--brand-400);}
+.note-divider-line{height:1px;background:var(--surface-border);margin-bottom:28px;}
+.note-body{font-size:15px;line-height:1.8;color:rgba(255,255,255,.72);}
+.note-body h2{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--surface-text);margin:28px 0 12px;}
+.note-body h3{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--surface-text);margin:20px 0 8px;}
+.note-body p{margin-bottom:14px;}
+.note-body ul,.note-body ol{padding-left:22px;margin-bottom:14px;}
+.note-body li{margin-bottom:6px;}
+.note-body code{font-family:var(--font-mono);font-size:13px;background:var(--surface-overlay);padding:2px 6px;border-radius:4px;color:var(--brand-300);}
+.note-body blockquote{
+  border-left:3px solid var(--brand-500);padding:10px 16px;
+  margin:16px 0;background:rgba(99,102,241,.05);border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  color:rgba(255,255,255,.55);font-style:italic;
+}
+.note-cursor{
+  display:inline-block;width:2px;height:18px;background:var(--brand-500);
+  border-radius:1px;margin-left:1px;vertical-align:text-bottom;
+  animation:blink 1s step-end infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+/* Floating toolbar */
+.float-toolbar{
+  display:inline-flex;align-items:center;gap:2px;
+  padding:5px 8px;border-radius:var(--radius-md);
+  background:var(--surface-overlay);border:1px solid var(--surface-border);
+  box-shadow:var(--shadow-lg);margin:20px 0 10px;
+}
+.float-toolbar .toolbar-btn{width:26px;height:26px;font-size:11px;}
+
+/* Reference panel (researcher) */
+.ref-panel{
+  width:0;overflow:hidden;transition:width var(--dur-slow) var(--ease-out);
+  border-left:1px solid var(--surface-border);
+  background:var(--surface-raised);flex-shrink:0;
+}
+.ref-panel.open{width:260px;}
+.ref-inner{padding:16px;width:260px;}
+.ref-title{font-size:12px;font-weight:700;color:var(--surface-text);margin-bottom:14px;}
+.ref-item{
+  padding:10px;border-radius:var(--radius-sm);
+  background:var(--surface-overlay);border:1px solid var(--surface-border);
+  margin-bottom:8px;cursor:pointer;transition:border-color var(--dur-fast);
+}
+.ref-item:hover{border-color:rgba(99,102,241,.3);}
+.ref-item-title{font-size:11px;font-weight:600;color:var(--surface-text);line-height:1.4;margin-bottom:3px;}
+.ref-item-meta{font-size:10px;color:var(--surface-muted);}
+.note-editor-wrap{display:flex;flex:1;overflow:hidden;}
+
+/* ═══════════════════════════════════════
+   SCREEN 5 — SETTINGS
+═══════════════════════════════════════ */
+.settings-shell{
+  display:grid;grid-template-columns:220px 1fr;height:100%;
+}
+.settings-nav{
+  background:var(--surface-raised);border-right:1px solid var(--surface-border);
+  padding:20px 10px;overflow-y:auto;
+}
+.settings-nav-label{
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--surface-muted);padding:6px 8px 4px;
+}
+.settings-nav-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;border-radius:var(--radius-sm);
+  font-size:13px;font-weight:500;color:var(--surface-muted);
+  cursor:pointer;transition:all var(--dur-fast);margin-bottom:1px;
+}
+.settings-nav-item:hover{background:var(--surface-subtle);color:var(--surface-text);}
+.settings-nav-item.active{background:rgba(99,102,241,.1);color:var(--brand-300);font-weight:600;}
+.settings-nav-item.danger{color:rgba(244,63,94,.7);}
+.settings-nav-item.danger:hover{background:rgba(244,63,94,.08);color:var(--danger-500);}
+.settings-body{background:var(--surface-base);overflow-y:auto;padding:32px 40px;}
+.settings-page-title{font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--surface-text);margin-bottom:4px;}
+.settings-page-sub{font-size:13px;color:var(--surface-muted);margin-bottom:28px;}
+.settings-block{
+  background:var(--surface-raised);border:1px solid var(--surface-border);
+  border-radius:var(--radius-lg);margin-bottom:16px;overflow:hidden;
+}
+.settings-block-header{
+  padding:14px 20px;border-bottom:1px solid var(--surface-border);
+  font-size:13px;font-weight:700;color:var(--surface-text);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.settings-block-body{padding:20px;}
+.settings-row{
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+  padding:13px 0;border-bottom:1px solid rgba(255,255,255,.04);
+}
+.settings-row:last-child{border-bottom:none;padding-bottom:0;}
+.settings-row:first-child{padding-top:0;}
+.settings-row-info{}
+.settings-row-label{font-size:13px;font-weight:600;color:var(--surface-text);margin-bottom:2px;}
+.settings-row-desc{font-size:11px;color:var(--surface-muted);}
+/* Avatar */
+.profile-avatar-zone{display:flex;align-items:center;gap:16px;margin-bottom:22px;}
+.profile-avatar{
+  width:68px;height:68px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--brand-500),var(--accent-500));
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-size:24px;font-weight:800;color:#fff;
+  border:2px solid var(--surface-border);
+}
+.avatar-btn-row{display:flex;flex-direction:column;gap:6px;}
+.avatar-btn{
+  padding:6px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;
+  cursor:pointer;border:1px solid var(--surface-border);background:var(--surface-overlay);
+  color:var(--surface-text);font-family:var(--font-body);transition:all var(--dur-fast);
+}
+.avatar-btn:hover{border-color:rgba(255,255,255,.2);}
+.avatar-btn.danger{border-color:rgba(244,63,94,.2);color:var(--danger-500);}
+.avatar-btn.danger:hover{background:rgba(244,63,94,.06);}
+/* Form grid */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.s-input{
+  width:100%;padding:9px 12px;border-radius:var(--radius-md);
+  border:1.5px solid var(--surface-border);background:var(--surface-overlay);
+  color:var(--surface-text);font-size:13px;font-family:var(--font-body);outline:none;
+  transition:border-color var(--dur-fast);
+}
+.s-input:focus{border-color:var(--brand-500);box-shadow:0 0 0 3px rgba(99,102,241,.12);}
+.s-label{font-size:11px;font-weight:600;color:rgba(255,255,255,.5);display:block;margin-bottom:5px;}
+.s-select{
+  width:160px;padding:7px 10px;border-radius:var(--radius-sm);
+  border:1.5px solid var(--surface-border);background:var(--surface-overlay);
+  color:var(--surface-text);font-size:13px;font-family:var(--font-body);
+  outline:none;cursor:pointer;
+}
+.s-select:focus{border-color:var(--brand-500);}
+/* Persona selector */
+.persona-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.persona-card{
+  padding:14px 10px;border-radius:var(--radius-md);text-align:center;
+  border:1.5px solid var(--surface-border);background:var(--surface-overlay);
+  cursor:pointer;transition:all var(--dur-fast);
+}
+.persona-card:hover{border-color:rgba(99,102,241,.3);}
+.persona-card.active{border-color:var(--brand-500);background:rgba(99,102,241,.08);}
+.persona-card-icon{font-size:24px;margin-bottom:6px;}
+.persona-card-name{font-size:12px;font-weight:700;color:var(--surface-muted);}
+.persona-card.active .persona-card-name{color:var(--brand-300);}
+.persona-card-desc{font-size:10px;color:rgba(255,255,255,.25);margin-top:2px;}
+/* Workspace list */
+.ws-list-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 0;border-bottom:1px solid rgba(255,255,255,.04);
+}
+.ws-list-item:last-child{border-bottom:none;}
+.ws-list-icon{
+  width:36px;height:36px;border-radius:var(--radius-sm);
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
+}
+.ws-list-name{font-size:13px;font-weight:700;color:var(--surface-text);}
+.ws-list-meta{font-size:11px;color:var(--surface-muted);}
+.ws-list-badge{
+  font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;
+}
+.ws-badge-work    {background:rgba(99,102,241,.15);color:var(--brand-300);}
+.ws-badge-study   {background:rgba(16,185,129,.12);color:#34d399;}
+.ws-badge-research{background:rgba(139,92,246,.15);color:var(--accent-400);}
+/* Danger zone */
+.danger-zone{
+  background:rgba(244,63,94,.04);border:1px solid rgba(244,63,94,.15);
+  border-radius:var(--radius-lg);padding:18px;
+}
+.danger-zone-title{font-size:14px;font-weight:700;color:var(--danger-500);margin-bottom:4px;}
+.danger-zone-desc{font-size:12px;color:var(--surface-muted);margin-bottom:14px;line-height:1.6;}
+.btn-danger-outline{
+  padding:7px 16px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;
+  background:transparent;color:var(--danger-500);border:1px solid rgba(244,63,94,.3);
+  cursor:pointer;font-family:var(--font-body);transition:all var(--dur-fast);margin-right:8px;
+}
+.btn-danger-outline:hover{background:rgba(244,63,94,.08);}
+.btn-danger-fill{
+  padding:7px 16px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;
+  background:var(--danger-600);color:#fff;border:none;
+  cursor:pointer;font-family:var(--font-body);transition:all var(--dur-fast);
+}
+.btn-danger-fill:hover{background:var(--danger-500);}
+
+/* ─────────────────────────────────
+   REDUCED MOTION
+───────────────────────────────── */
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:1ms!important;transition-duration:1ms!important;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Screen Navigation ── -->
+<div class="screen-nav">
+  <div class="screen-nav-brand">Flowdesk</div>
+  <div class="screen-tabs">
+    <button class="s-tab active" onclick="show('auth',this)">01 Auth</button>
+    <button class="s-tab" onclick="show('dashboard',this)">02 Dashboard</button>
+    <button class="s-tab" onclick="show('kanban',this)">03 Kanban Board</button>
+    <button class="s-tab" onclick="show('notes',this)">04 Note Editor</button>
+    <button class="s-tab" onclick="show('settings',this)">05 Settings</button>
+  </div>
+  <div class="screen-badge">Phase 5 — UI Design</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 1 — AUTH
+═══════════════════════════════════════ -->
+<div id="screen-auth" class="screen active">
+  <div class="auth-shell">
+    <div class="auth-wrap">
+
+      <!-- Left panel -->
+      <div class="auth-left">
+        <div class="auth-left-glow1"></div>
+        <div class="auth-left-glow2"></div>
+        <div class="auth-brand-mark">
+          <div class="auth-brand-name">Flowdesk</div>
+          <div class="auth-brand-tag">Work · Study · Research</div>
+        </div>
+        <div class="auth-hero">
+          <h2>One desk for every kind of <span>deep work</span></h2>
+          <p>Track projects like a developer, plan studies like a student, and organize research like a scholar — all from one focused workspace.</p>
+          <div class="auth-pills">
+            <span class="auth-pill">🧑‍💻 Kanban boards</span>
+            <span class="auth-pill">📝 Rich text notes</span>
+            <span class="auth-pill">📅 Study plans</span>
+            <span class="auth-pill">🔬 Research refs</span>
+            <span class="auth-pill">📁 File uploads</span>
+            <span class="auth-pill">⚡ Quick capture</span>
+          </div>
+        </div>
+        <div class="auth-stats">
+          <div><div class="auth-stat-val">3</div><div class="auth-stat-label">Personas</div></div>
+          <div><div class="auth-stat-val">7</div><div class="auth-stat-label">Collections</div></div>
+          <div><div class="auth-stat-val">∞</div><div class="auth-stat-label">Workspaces</div></div>
+        </div>
+      </div>
+
+      <!-- Right: Login -->
+      <div class="auth-right" id="auth-right-login">
+        <div class="auth-tab-row">
+          <button class="auth-tab active" onclick="switchAuth('login')">Sign in</button>
+          <button class="auth-tab" onclick="switchAuth('register')">Create account</button>
+        </div>
+        <div class="auth-title">Welcome back</div>
+        <div class="auth-sub">Sign in to continue to your workspace</div>
+        <div class="form-field">
+          <label class="form-label">Email address</label>
+          <input class="form-input focused" type="email" value="ls.santo@email.com" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Password</label>
+          <div class="input-wrap">
+            <input class="form-input" type="password" value="••••••••••" />
+            <span class="input-eye">👁</span>
+          </div>
+        </div>
+        <div class="flex items-center" style="margin-bottom:22px;">
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--surface-muted);cursor:pointer;">
+            <input type="checkbox" checked style="accent-color:var(--brand-600);width:14px;height:14px;" /> Keep me signed in
+          </label>
+          <a href="#" class="auth-forgot" style="margin-left:auto;">Forgot password?</a>
+        </div>
+        <button class="auth-btn">Sign in to Flowdesk</button>
+        <div class="auth-divider">or</div>
+        <button class="auth-google">
+          <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continue with Google
+        </button>
+        <div class="auth-footer">Don't have an account? <a href="#" onclick="switchAuth('register');return false;">Create one free</a></div>
+      </div>
+
+      <!-- Right: Register (hidden initially) -->
+      <div class="auth-right" id="auth-right-register" style="display:none;">
+        <div class="auth-tab-row">
+          <button class="auth-tab" onclick="switchAuth('login')">Sign in</button>
+          <button class="auth-tab active" onclick="switchAuth('register')">Create account</button>
+        </div>
+        <div class="auth-title">Create your account</div>
+        <div class="auth-sub">Choose your persona to personalize your experience</div>
+        <div class="form-row" style="margin-bottom:14px;">
+          <div class="form-field" style="margin:0;">
+            <label class="form-label">First name</label>
+            <input class="form-input" type="text" placeholder="Your name" />
+          </div>
+          <div class="form-field" style="margin:0;">
+            <label class="form-label">Last name</label>
+            <input class="form-input" type="text" placeholder="Last name" />
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Email address</label>
+          <input class="form-input" type="email" placeholder="you@example.com" />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Password</label>
+          <div class="input-wrap">
+            <input class="form-input" type="password" placeholder="Min. 8 characters" />
+            <span class="input-eye">👁</span>
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.6);margin-bottom:9px;">I am a... <span style="color:var(--surface-muted);font-weight:400;">(select all that apply)</span></div>
+        <div class="auth-persona-grid" style="margin-bottom:18px;">
+          <div class="auth-persona-card selected" onclick="this.classList.toggle('selected')">
+            <div class="persona-emoji">🧑‍💻</div>
+            <div class="persona-name">Developer</div>
+          </div>
+          <div class="auth-persona-card" onclick="this.classList.toggle('selected')">
+            <div class="persona-emoji">🎓</div>
+            <div class="persona-name">Student</div>
+          </div>
+          <div class="auth-persona-card" onclick="this.classList.toggle('selected')">
+            <div class="persona-emoji">🔬</div>
+            <div class="persona-name">Researcher</div>
+          </div>
+        </div>
+        <button class="auth-btn">Create account</button>
+        <div class="auth-footer">Already have an account? <a href="#" onclick="switchAuth('login');return false;">Sign in</a></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 2 — DASHBOARD
+═══════════════════════════════════════ -->
+<div id="screen-dashboard" class="screen">
+  <div class="app-shell">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-logo-zone"><span class="topbar-brand">Flowdesk</span></div>
+      <div class="topbar-center">
+        <div class="search-bar">
+          <span>🔍</span> Search cards, notes, projects…
+          <span class="search-shortcut">⌘K</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn">🌙</button>
+        <button class="icon-btn" style="position:relative;">🔔<span class="notif-badge"></span></button>
+        <div class="topbar-avatar">LS</div>
+      </div>
+    </div>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Workspace</div>
+        <div class="ws-chip">
+          <div class="ws-dot" style="background:var(--dev-color);"></div>
+          <div><div class="ws-name">Dev Work</div><div class="ws-type">work</div></div>
+          <span class="ws-chevron">▾</span>
+        </div>
+        <div class="sidebar-add">＋ New workspace</div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Main</div>
+        <div class="sidebar-item active"><span class="s-icon">🏠</span> Home</div>
+        <div class="sidebar-item"><span class="s-icon">📋</span> My Tasks <span class="s-count">3</span></div>
+        <div class="sidebar-item"><span class="s-icon">📅</span> Calendar</div>
+        <div class="sidebar-item"><span class="s-icon">⚡</span> Quick Capture</div>
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Projects</div>
+        <div class="proj-item active"><div class="proj-dot" style="background:#4f46e5;"></div> Flowdesk App</div>
+        <div class="proj-item"><div class="proj-dot" style="background:#10b981;"></div> bdnewsfeed</div>
+        <div class="proj-item"><div class="proj-dot" style="background:#f59e0b;"></div> Appifylab Prep</div>
+        <div class="proj-item"><div class="proj-dot" style="background:#8b5cf6;"></div> Aklima Portfolio</div>
+        <div class="sidebar-add">＋ New project</div>
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Notes</div>
+        <div class="sidebar-item"><span class="s-icon">📝</span> All Notes</div>
+        <div class="sidebar-item"><span class="s-icon">📌</span> Pinned</div>
+        <div class="sidebar-item"><span class="s-icon">📁</span> Folders</div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-item"><span class="s-icon">⚙️</span> Settings</div>
+      </div>
+    </div>
+    <!-- Main -->
+    <div class="main">
+      <div class="dash-content">
+        <div class="dash-greeting">Good morning, Santo 👋</div>
+        <div class="dash-date">Sunday, June 28, 2026 · 3 tasks due today</div>
+        <!-- Stat cards -->
+        <div class="stat-row">
+          <div class="stat-card">
+            <div class="stat-card-accent" style="background:linear-gradient(90deg,var(--brand-500),var(--accent-500));"></div>
+            <div class="stat-label">Active Projects</div>
+            <div class="stat-value">4</div>
+            <div class="stat-sub">2 kanban · 1 study · 1 research</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-accent" style="background:var(--danger-500);"></div>
+            <div class="stat-label">Tasks Today</div>
+            <div class="stat-value">8</div>
+            <div class="stat-sub"><span class="trend-up">5 done</span>&nbsp;·&nbsp;<span class="trend-down">3 overdue</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-accent" style="background:var(--success-500);"></div>
+            <div class="stat-label">Notes This Week</div>
+            <div class="stat-value">12</div>
+            <div class="stat-sub"><span class="trend-up">↑ 4 from last week</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-accent" style="background:var(--warning-500);"></div>
+            <div class="stat-label">Study Streak</div>
+            <div class="stat-value">7d</div>
+            <div class="stat-sub">Keep going 🔥</div>
+          </div>
+        </div>
+        <!-- Two columns -->
+        <div class="dash-cols">
+          <div class="flex flex-col gap-4" style="gap:14px;">
+            <!-- Tasks -->
+            <div class="panel">
+              <div class="panel-header">
+                <div class="panel-title">📋 Today's Tasks</div>
+                <span class="panel-action">View all →</span>
+              </div>
+              ${[
+                [true, 'Set up Express server boilerplate','p-high','Done'],
+                [true, 'Design DB schema for Flowdesk','p-medium','Done'],
+                [false,'Build Kanban board with dnd-kit','p-urgent','2d overdue',true],
+                [false,'Write TipTap editor component','p-high','Today'],
+                [false,'Review Appifylab job requirements','p-low','Jun 30'],
+              ].map(([done,text,p,due,over])=>`
+                <div class="task-item">
+                  <div class="task-check${done?' done':''}"></div>
+                  <span class="task-text${done?' done':''}">${text}</span>
+                  <span class="priority ${p}" style="flex-shrink:0;">${p.replace('p-','')}</span>
+                  <span class="task-due${over?' overdue':''}">${due}</span>
+                </div>
+              `).join('')}
+            </div>
+            <!-- Projects -->
+            <div class="panel">
+              <div class="panel-header">
+                <div class="panel-title">🗂 Project Progress</div>
+                <span class="panel-action">All projects →</span>
+              </div>
+              <div class="proj-grid">
+                ${[
+                  ['Flowdesk App','kanban','#4f46e5',20,'p-fill-brand'],
+                  ['bdnewsfeed',  'kanban','#10b981',78,'p-fill-success'],
+                  ['Appifylab Prep','study','#f59e0b',45,'p-fill-warning'],
+                  ['Aklima Portfolio','kanban','#8b5cf6',100,'p-fill-success'],
+                ].map(([name,type,color,pct,fill])=>`
+                  <div class="proj-card">
+                    <div class="proj-card-top">
+                      <div class="proj-dot-box" style="background:${color};"></div>
+                      <div><div class="proj-name">${name}</div><div class="proj-type">${type}</div></div>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill ${fill}" style="width:${pct}%;"></div></div>
+                    <div class="flex justify-between" style="margin-top:5px;">
+                      <span class="text-xs text-muted">${pct===100?'Delivered ✓':type==='study'?`Week 2/3`:`Phase ${Math.ceil(pct/14)}/7`}</span>
+                      <span class="text-xs text-muted">${pct}%</span>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+          <!-- Right column -->
+          <div class="flex flex-col" style="gap:14px;">
+            <!-- Quick capture -->
+            <div class="panel">
+              <div class="panel-header"><div class="panel-title">⚡ Quick Capture</div></div>
+              <div class="qc-wrap">
+                <textarea class="qc-textarea" placeholder="Dump a thought or task — sort it later…"></textarea>
+                <div class="flex" style="gap:8px;margin-top:8px;justify-content:flex-end;">
+                  <button class="btn btn-ghost btn-sm">Note</button>
+                  <button class="btn btn-primary btn-sm">Add task</button>
+                </div>
+              </div>
+            </div>
+            <!-- Heatmap -->
+            <div class="panel">
+              <div class="panel-header"><div class="panel-title">📊 Activity</div><span class="text-xs text-muted">Last 12 weeks</span></div>
+              <div class="heatmap-wrap">
+                <div class="heatmap-grid">
+                  ${Array.from({length:12},(_,w)=>`
+                    <div class="hm-col">
+                      ${Array.from({length:7},()=>{
+                        const r=Math.random();
+                        const cls=r>.85?'hm-4':r>.65?'hm-3':r>.42?'hm-2':r>.28?'hm-1':'';
+                        return `<div class="hm-cell ${cls}"></div>`;
+                      }).join('')}
+                    </div>
+                  `).join('')}
+                </div>
+                <div class="flex items-center" style="gap:5px;margin-top:10px;">
+                  <span class="text-xs text-muted">Less</span>
+                  <div class="hm-cell"></div><div class="hm-cell hm-1"></div>
+                  <div class="hm-cell hm-2"></div><div class="hm-cell hm-3"></div>
+                  <div class="hm-cell hm-4"></div>
+                  <span class="text-xs text-muted">More</span>
+                </div>
+              </div>
+            </div>
+            <!-- Recent notes -->
+            <div class="panel">
+              <div class="panel-header"><div class="panel-title">📝 Recent Notes</div><span class="panel-action">All →</span></div>
+              ${[
+                ['🔬','BFS Crawling Architecture','2h ago'],
+                ['📚','Appifylab Interview Prep','Yesterday'],
+                ['📝','Quick thoughts on dnd-kit','Jun 26'],
+              ].map(([icon,title,time])=>`
+                <div class="note-item">
+                  <span>${icon}</span>
+                  <span class="note-title">${title}</span>
+                  <span class="note-time">${time}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 3 — KANBAN BOARD
+═══════════════════════════════════════ -->
+<div id="screen-kanban" class="screen">
+  <div class="app-shell">
+    <div class="topbar">
+      <div class="topbar-logo-zone"><span class="topbar-brand">Flowdesk</span></div>
+      <div class="topbar-breadcrumb">
+        <span>Dev Work</span><span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current">Flowdesk App</span>
+      </div>
+      <div class="board-topbar-extra">
+        <div class="view-toggle">
+          <button class="view-btn active">Board</button>
+          <button class="view-btn">List</button>
+        </div>
+        <div class="filter-chip active">🏷 All</div>
+        <div class="filter-chip">⏰ Due today</div>
+        <div class="filter-chip">🔴 High</div>
+        <button class="btn btn-primary btn-sm" style="margin-left:4px;">＋ Add card</button>
+      </div>
+    </div>
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="ws-chip">
+          <div class="ws-dot" style="background:var(--dev-color);"></div>
+          <div><div class="ws-name">Dev Work</div><div class="ws-type">work</div></div>
+          <span class="ws-chevron">▾</span>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Main</div>
+        <div class="sidebar-item"><span class="s-icon">🏠</span> Home</div>
+        <div class="sidebar-item"><span class="s-icon">📋</span> My Tasks</div>
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Projects</div>
+        <div class="proj-item active"><div class="proj-dot" style="background:#4f46e5;"></div> Flowdesk App</div>
+        <div class="proj-item"><div class="proj-dot" style="background:#10b981;"></div> bdnewsfeed</div>
+        <div class="proj-item"><div class="proj-dot" style="background:#f59e0b;"></div> Appifylab Prep</div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-item"><span class="s-icon">⚙️</span> Settings</div>
+      </div>
+    </div>
+    <div class="main" style="overflow:hidden;position:relative;">
+      <div class="board-main">
+        <div class="board-header">
+          <div>
+            <div class="board-title">Flowdesk App</div>
+            <div class="board-meta">kanban · 4 columns · 14 cards · Phase 1 of 7 — 20% complete</div>
+          </div>
+          <div class="board-actions">
+            <div style="display:flex;align-items:center;gap:-6px;">
+              <div class="avatar" style="width:24px;height:24px;font-size:9px;border:2px solid var(--surface-raised);">LS</div>
+            </div>
+            <button class="btn btn-ghost btn-sm">⚙ Settings</button>
+            <button class="btn btn-ghost btn-sm">📤 Export</button>
+          </div>
+        </div>
+        <div class="board-scroll">
+          <div class="board-cols">
+
+            <!-- Todo -->
+            <div class="kanban-col col-todo">
+              <div class="kanban-col-header">
+                <span class="col-title">To Do</span>
+                <span class="col-count">5</span>
+                <span class="col-add">＋</span>
+              </div>
+              <div class="kanban-col-body">
+                ${[
+                  {t:'Design Settings page UI',p:'p-medium',tags:['ui','phase-5'],due:'Jul 2'},
+                  {t:'Build folder tree component',p:'p-low',tags:['component'],due:'Jul 4'},
+                  {t:'Set up Cloudinary integration',p:'p-medium',tags:['backend'],due:'Jul 6'},
+                  {t:'Write unit tests for auth',p:'p-low',tags:['testing'],due:'Jul 8'},
+                ].map(c=>`
+                  <div class="k-card">
+                    <div class="k-card-accent" style="background:var(--surface-muted);"></div>
+                    <div class="k-card-inner">
+                      <div class="k-card-title">${c.t}</div>
+                      <div class="k-card-tags">
+                        <span class="priority ${c.p}">${c.p.replace('p-','')}</span>
+                        ${c.tags.map(tag=>`<span class="badge badge-gray">${tag}</span>`).join('')}
+                      </div>
+                      <div class="k-card-footer">
+                        <span class="k-card-due">📅 ${c.due}</span>
+                        <div class="k-avatar">LS</div>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+                <div class="add-card">＋ Add card</div>
+              </div>
+            </div>
+
+            <!-- In Progress -->
+            <div class="kanban-col col-progress">
+              <div class="kanban-col-header">
+                <span class="col-title">In Progress</span>
+                <span class="col-count">3</span>
+                <span class="col-add">＋</span>
+              </div>
+              <div class="kanban-col-body">
+                ${[
+                  {t:'Build Kanban board with dnd-kit',p:'p-urgent',tags:['dnd-kit','frontend'],due:'Overdue',over:true},
+                  {t:'Write TipTap editor component',p:'p-high',tags:['tiptap','editor'],due:'Today'},
+                  {t:'Set up MongoDB connection + models',p:'p-high',tags:['backend','db'],due:'Jun 30'},
+                ].map(c=>`
+                  <div class="k-card">
+                    <div class="k-card-accent" style="background:var(--brand-500);"></div>
+                    <div class="k-card-inner">
+                      <div class="k-card-title">${c.t}</div>
+                      <div class="k-card-tags">
+                        <span class="priority ${c.p}">${c.p.replace('p-','')}</span>
+                        ${c.tags.map(tag=>`<span class="badge badge-brand">${tag}</span>`).join('')}
+                      </div>
+                      <div class="k-card-footer">
+                        <span class="k-card-due${c.over?' over':''}">⏰ ${c.due}</span>
+                        <div class="k-avatar">LS</div>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+                <div class="add-card">＋ Add card</div>
+              </div>
+            </div>
+
+            <!-- Review -->
+            <div class="kanban-col col-review">
+              <div class="kanban-col-header">
+                <span class="col-title">Review</span>
+                <span class="col-count">2</span>
+                <span class="col-add">＋</span>
+              </div>
+              <div class="kanban-col-body">
+                ${[
+                  {t:'JWT auth with refresh token rotation',p:'p-high',tags:['auth','security'],due:'Jun 28'},
+                  {t:'Design system — Phase 4',p:'p-medium',tags:['design'],due:'Done'},
+                ].map(c=>`
+                  <div class="k-card">
+                    <div class="k-card-accent" style="background:var(--warning-500);"></div>
+                    <div class="k-card-inner">
+                      <div class="k-card-title">${c.t}</div>
+                      <div class="k-card-tags">
+                        <span class="priority ${c.p}">${c.p.replace('p-','')}</span>
+                        ${c.tags.map(tag=>`<span class="badge badge-warning">${tag}</span>`).join('')}
+                      </div>
+                      <div class="k-card-footer">
+                        <span class="k-card-due">📅 ${c.due}</span>
+                        <div class="k-avatar">LS</div>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+                <div class="add-card">＋ Add card</div>
+              </div>
+            </div>
+
+            <!-- Done -->
+            <div class="kanban-col col-done">
+              <div class="kanban-col-header">
+                <span class="col-title">Done</span>
+                <span class="col-count">4</span>
+                <span class="col-add">＋</span>
+              </div>
+              <div class="kanban-col-body">
+                ${[
+                  {t:'Architecture document',p:'p-high',tags:['docs'],due:'Jun 20'},
+                  {t:'Wireframes — Phase 3',p:'p-medium',tags:['design'],due:'Jun 22'},
+                  {t:'Express server boilerplate setup',p:'p-high',tags:['backend'],due:'Jun 24'},
+                  {t:'DB schema — 7 collections',p:'p-high',tags:['db'],due:'Jun 25'},
+                ].map(c=>`
+                  <div class="k-card" style="opacity:.65;">
+                    <div class="k-card-accent" style="background:var(--success-500);"></div>
+                    <div class="k-card-inner">
+                      <div class="k-card-title" style="text-decoration:line-through;color:var(--surface-muted);">${c.t}</div>
+                      <div class="k-card-tags">
+                        <span class="badge badge-success">done</span>
+                        ${c.tags.map(tag=>`<span class="badge badge-gray">${tag}</span>`).join('')}
+                      </div>
+                      <div class="k-card-footer">
+                        <span class="k-card-due">✓ ${c.due}</span>
+                        <div class="k-avatar">LS</div>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="add-col">＋ Add column</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Slide-Over -->
+      <div class="slideover-backdrop" id="slideover-backdrop" style="display:none;" onclick="closeSlideover()"></div>
+      <div class="slideover" id="slideover" style="display:none;">
+        <div class="slideover-header">
+          <button class="slideover-close" onclick="closeSlideover()">✕</button>
+          <textarea class="slideover-title-input" rows="2">Build Kanban board with dnd-kit</textarea>
+        </div>
+        <div class="slideover-meta">
+          <div class="meta-item"><span class="meta-label">Status</span><span class="badge badge-brand">In Progress</span></div>
+          <div class="meta-item"><span class="meta-label">Priority</span><span class="priority p-urgent">urgent</span></div>
+          <div class="meta-item"><span class="meta-label">Due</span><span class="meta-val" style="color:var(--danger-500);">Overdue</span></div>
+          <div class="meta-item"><span class="meta-label">Tags</span><span class="badge badge-brand">dnd-kit</span><span class="badge badge-brand" style="margin-left:4px;">frontend</span></div>
+        </div>
+        <div class="slideover-body">
+          <div class="editor-toolbar">
+            <button class="toolbar-btn active">B</button>
+            <button class="toolbar-btn" style="font-style:italic;">I</button>
+            <button class="toolbar-btn" style="text-decoration:underline;">U</button>
+            <button class="toolbar-btn" style="text-decoration:line-through;">S</button>
+            <div class="toolbar-sep"></div>
+            <button class="toolbar-btn">H1</button>
+            <button class="toolbar-btn">H2</button>
+            <div class="toolbar-sep"></div>
+            <button class="toolbar-btn">≡</button>
+            <button class="toolbar-btn">①</button>
+            <button class="toolbar-btn">☑</button>
+            <div class="toolbar-sep"></div>
+            <button class="toolbar-btn">&lt;/&gt;</button>
+            <button class="toolbar-btn">🔗</button>
+            <button class="toolbar-btn">📎</button>
+          </div>
+          <div class="editor-area">
+            <h3>Overview</h3>
+            <p>Implement the Kanban board drag-and-drop using <code>@dnd-kit/core</code>. Cards must be draggable within columns and across columns. Column reorder should also work.</p>
+            <h3>Checklist</h3>
+            <ul>
+              <li>✅ Install and configure @dnd-kit/core</li>
+              <li>✅ Set up DndContext and SortableContext</li>
+              <li>⬜ Build draggable Card component</li>
+              <li>⬜ Build droppable Column component</li>
+              <li>⬜ Handle cross-column card moves</li>
+              <li>⬜ Update position (float) on DB after drop</li>
+              <li>⬜ Optimistic UI — update Zustand before API call</li>
+            </ul>
+            <h3>Notes</h3>
+            <p>Use float positions for cards (1.0, 2.0…). Insert between two cards = avg of neighbors. Reindex when gap &lt; 0.001. See architecture doc section 7 for reasoning.</p>
+          </div>
+        </div>
+        <div class="slideover-footer">
+          <div class="flex items-center gap-2" style="font-size:12px;color:var(--surface-muted);">
+            <span>📎 0 attachments</span>
+            <span>·</span>
+            <span>Updated 2h ago</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-ghost btn-sm">🗑 Delete</button>
+            <button class="btn btn-primary btn-sm">Save changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 4 — NOTE EDITOR
+═══════════════════════════════════════ -->
+<div id="screen-notes" class="screen">
+  <div class="app-shell">
+    <div class="topbar">
+      <div class="topbar-logo-zone"><span class="topbar-brand">Flowdesk</span></div>
+      <div class="topbar-center">
+        <div class="search-bar">🔍 Search notes… <span class="search-shortcut">⌘K</span></div>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn">🌙</button>
+        <button class="btn btn-primary btn-sm">＋ New note</button>
+        <div class="topbar-avatar">LS</div>
+      </div>
+    </div>
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="ws-chip">
+          <div class="ws-dot" style="background:var(--dev-color);"></div>
+          <div><div class="ws-name">Dev Work</div></div>
+          <span class="ws-chevron">▾</span>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Notes</div>
+        <div class="folder-item active"><span class="folder-icon">📝</span> All Notes</div>
+        <div class="folder-item"><span class="folder-icon">📌</span> Pinned</div>
+        <div class="sidebar-divider" style="margin:6px 0;"></div>
+        <div class="sidebar-label" style="padding-top:0;">Folders</div>
+        <div class="folder-item"><span class="folder-icon">📂</span> Research</div>
+        <div class="folder-sub">
+          <div class="folder-item"><span class="folder-icon">📄</span> BFS Notes</div>
+          <div class="folder-item"><span class="folder-icon">📄</span> API Design</div>
+        </div>
+        <div class="folder-item"><span class="folder-icon">📂</span> Study</div>
+        <div class="folder-item"><span class="folder-icon">📂</span> Personal</div>
+        <div class="sidebar-add">＋ New folder</div>
+      </div>
+    </div>
+    <div class="main" style="overflow:hidden;">
+      <div style="display:grid;grid-template-columns:240px 1fr;height:100%;">
+        <!-- Note list panel -->
+        <div style="border-right:1px solid var(--surface-border);overflow-y:auto;padding:12px 8px;background:var(--surface-raised);">
+          <div class="flex items-center justify-between" style="padding:4px 6px 12px;">
+            <span style="font-size:12px;font-weight:700;color:var(--surface-text);">All Notes</span>
+            <span class="text-xs text-muted">12 notes</span>
+          </div>
+          ${[
+            ['BFS Crawling Architecture','Technical deep-dive into breadth-first crawling for bdnewsfeed scraper engine…','🔬','2h ago',true],
+            ['Appifylab Interview Prep','Questions on React hooks, system design, EzyCourse product overview…','📚','Yesterday',false],
+            ['dnd-kit Quick Reference','Key APIs: DndContext, useSortable, SortableContext, arrayMove…','📝','Jun 26',false],
+            ['Flowdesk DB Schema Notes','MongoDB schema decisions — why float positions, Mixed type for TipTap…','📝','Jun 25',false],
+            ['Quick thoughts — dark mode','Layered slate approach vs flat dark. surface-base, surface-raised, overlay…','💡','Jun 24',false],
+          ].map(([title,preview,icon,time,active])=>`
+            <div class="note-list-item${active?' active':''}">
+              <div class="flex items-center gap-2">
+                <span style="font-size:13px;">${icon}</span>
+                <span class="note-list-title">${title}</span>
+              </div>
+              <div class="note-list-preview">${preview}</div>
+              <div class="note-list-meta">${time}</div>
+            </div>
+          `).join('')}
+        </div>
+        <!-- Editor + optional ref panel -->
+        <div class="note-editor-wrap">
+          <div class="note-editor-main">
+            <div class="note-editor-topbar">
+              <div class="note-breadcrumb">Notes / Research / <span>BFS Crawling Architecture</span></div>
+              <div class="note-actions">
+                <span class="note-status">Auto-saved just now</span>
+                <button class="icon-btn" title="Toggle references" onclick="toggleRef()">🔬</button>
+                <button class="icon-btn" title="Export">📤</button>
+                <button class="icon-btn" title="More">⋯</button>
+              </div>
+            </div>
+            <div class="note-editor-body">
+              <textarea class="note-title-input" rows="2">BFS Crawling Architecture</textarea>
+              <div class="note-tags-row">
+                <span class="note-tag-chip">research</span>
+                <span class="note-tag-chip">bdnewsfeed</span>
+                <span class="note-tag-chip">crawler</span>
+                <span class="note-tag-add">＋ tag</span>
+              </div>
+              <div class="note-divider-line"></div>
+              <!-- Floating toolbar example -->
+              <div class="float-toolbar">
+                <button class="toolbar-btn active">B</button>
+                <button class="toolbar-btn" style="font-style:italic;">I</button>
+                <div class="toolbar-sep"></div>
+                <button class="toolbar-btn">H2</button>
+                <button class="toolbar-btn">H3</button>
+                <div class="toolbar-sep"></div>
+                <button class="toolbar-btn">🔗</button>
+                <button class="toolbar-btn">&lt;/&gt;</button>
+                <button class="toolbar-btn">≡</button>
+              </div>
+              <div class="note-body">
+                <h2>Overview</h2>
+                <p>The bdnewsfeed scraper uses a multi-layer extraction chain — <strong>Trafilatura → Newspaper4k → readability-lxml</strong> — with BFS crawling as the discovery mechanism. Each source is crawled on a configurable schedule via APScheduler.</p>
+                <h3>BFS Algorithm</h3>
+                <p>Breadth-first search starts from a seed URL and visits all links at the current depth before going deeper. This ensures broad coverage of a news portal before going into article detail pages.</p>
+                <ul>
+                  <li>Queue initialized with seed URL per source</li>
+                  <li>Each popped URL is fetched, parsed for links, filtered by domain</li>
+                  <li>robots.txt compliance checked before each fetch</li>
+                  <li>Async fetch via <code>httpx</code> with configurable concurrency limit</li>
+                </ul>
+                <blockquote>robots.txt compliance is non-negotiable — violation risks IP block and legal exposure. Check on every run, cache result for 24h.</blockquote>
+                <h3>Extraction Chain</h3>
+                <p>Articles go through three extractors in sequence. If Trafilatura returns content above threshold, we stop. Otherwise fall through to Newspaper4k, then readability-lxml.</p>
+                <p>This was the key architectural decision that improved extraction success rate from ~60% to ~94% across 27 sources.<span class="note-cursor"></span></p>
+              </div>
+            </div>
+          </div>
+          <!-- Reference panel (researcher persona) -->
+          <div class="ref-panel" id="ref-panel">
+            <div class="ref-inner">
+              <div class="ref-title">📚 References</div>
+              ${[
+                ['Scrapy Architecture Overview','Scrapy docs · 2024'],
+                ['BFS vs DFS for web crawling','Smith, J. · arXiv 2023'],
+                ['robots.txt Protocol Spec','RFC 9309 · 2022'],
+                ['Trafilatura: A Python Library','Barbaresi, A. · ACL 2021'],
+              ].map(([title,meta])=>`
+                <div class="ref-item">
+                  <div class="ref-item-title">${title}</div>
+                  <div class="ref-item-meta">${meta}</div>
+                </div>
+              `).join('')}
+              <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px;">＋ Add reference</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 5 — SETTINGS
+═══════════════════════════════════════ -->
+<div id="screen-settings" class="screen">
+  <div class="app-shell">
+    <div class="topbar">
+      <div class="topbar-logo-zone"><span class="topbar-brand">Flowdesk</span></div>
+      <div class="topbar-center">
+        <span style="font-size:15px;font-weight:700;color:var(--surface-text);">Settings</span>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-avatar">LS</div>
+      </div>
+    </div>
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Account</div>
+        <div class="sidebar-item active"><span class="s-icon">👤</span> Profile</div>
+        <div class="sidebar-item"><span class="s-icon">🔐</span> Security</div>
+        <div class="sidebar-item"><span class="s-icon">🔔</span> Notifications</div>
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">App</div>
+        <div class="sidebar-item"><span class="s-icon">🏢</span> Workspaces</div>
+        <div class="sidebar-item"><span class="s-icon">🎨</span> Appearance</div>
+        <div class="sidebar-item"><span class="s-icon">🌐</span> Language</div>
+        <div class="sidebar-item"><span class="s-icon">📤</span> Export data</div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-item" style="color:rgba(244,63,94,.6);">⚠️ Danger zone</div>
+      </div>
+    </div>
+    <div class="main">
+      <div class="settings-body">
+        <div class="settings-page-title">Profile Settings</div>
+        <div class="settings-page-sub">Manage your personal info and how Flowdesk works for you</div>
+
+        <!-- Profile block -->
+        <div class="settings-block">
+          <div class="settings-block-header">Personal Info</div>
+          <div class="settings-block-body">
+            <div class="profile-avatar-zone">
+              <div class="profile-avatar">LS</div>
+              <div class="avatar-btn-row">
+                <button class="avatar-btn">Upload photo</button>
+                <button class="avatar-btn danger">Remove photo</button>
+              </div>
+            </div>
+            <div class="form-grid" style="margin-bottom:14px;">
+              <div>
+                <label class="s-label">Full name</label>
+                <input class="s-input" type="text" value="ls_santo" />
+              </div>
+              <div>
+                <label class="s-label">Email address</label>
+                <input class="s-input" type="email" value="santo@email.com" />
+              </div>
+            </div>
+            <div>
+              <label class="s-label">Bio</label>
+              <input class="s-input" type="text" placeholder="Full Stack Developer at Jamuna TV" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Persona block -->
+        <div class="settings-block">
+          <div class="settings-block-header">My Persona</div>
+          <div class="settings-block-body">
+            <div class="text-muted" style="font-size:12px;margin-bottom:14px;">Select which modes are active for you. This controls which features appear in your sidebar.</div>
+            <div class="persona-grid">
+              <div class="persona-card active" onclick="this.classList.toggle('active')">
+                <div class="persona-card-icon">🧑‍💻</div>
+                <div class="persona-card-name">Developer</div>
+                <div class="persona-card-desc">Kanban, GitHub links</div>
+              </div>
+              <div class="persona-card" onclick="this.classList.toggle('active')">
+                <div class="persona-card-icon">🎓</div>
+                <div class="persona-card-name">Student</div>
+                <div class="persona-card-desc">Study plans, Pomodoro</div>
+              </div>
+              <div class="persona-card" onclick="this.classList.toggle('active')">
+                <div class="persona-card-icon">🔬</div>
+                <div class="persona-card-name">Researcher</div>
+                <div class="persona-card-desc">References, phases</div>
+              </div>
+            </div>
+            <div class="flex" style="margin-top:16px;justify-content:flex-end;">
+              <button class="btn btn-primary btn-sm">Save persona</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notifications block -->
+        <div class="settings-block">
+          <div class="settings-block-header">Notifications</div>
+          <div class="settings-block-body">
+            ${[
+              ['Task due reminders','Get notified when tasks are due today or overdue',true],
+              ['Study streak reminder','Daily nudge to keep your study streak alive',true],
+              ['Weekly summary email','Digest of tasks completed and notes written each week',false],
+              ['Mention alerts','Notify when someone mentions you in a shared workspace',false],
+            ].map(([label,desc,on])=>`
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">${label}</div>
+                  <div class="settings-row-desc">${desc}</div>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" ${on?'checked':''} />
+                  <div class="toggle-track"></div>
+                  <div class="toggle-thumb"></div>
+                </label>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Workspaces block -->
+        <div class="settings-block">
+          <div class="settings-block-header">
+            Workspaces
+            <button class="btn btn-primary btn-sm">＋ New workspace</button>
+          </div>
+          <div class="settings-block-body">
+            ${[
+              ['💻','Dev Work','4 projects · 24 cards','work','ws-badge-work'],
+              ['📚','Appifylab Prep','1 project · 18 cards','study','ws-badge-study'],
+              ['🔬','Research Notes','2 projects · 9 notes','research','ws-badge-research'],
+            ].map(([icon,name,meta,type,badgeCls])=>`
+              <div class="ws-list-item">
+                <div class="ws-list-icon" style="background:var(--surface-overlay);">${icon}</div>
+                <div style="flex:1;">
+                  <div class="ws-list-name">${name}</div>
+                  <div class="ws-list-meta">${meta}</div>
+                </div>
+                <span class="ws-list-badge ${badgeCls}">${type}</span>
+                <button class="avatar-btn" style="margin-left:10px;">Edit</button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Appearance block -->
+        <div class="settings-block">
+          <div class="settings-block-header">Appearance</div>
+          <div class="settings-block-body">
+            ${[
+              ['Theme','Interface color mode','select',['System default','Light','Dark']],
+              ['Language','Interface language','select',['English','বাংলা (Bangla)']],
+              ['Compact sidebar','Collapse sidebar to icon-only mode','toggle',null],
+              ['Show project colors','Color-coded dots in sidebar','toggle',null],
+            ].map(([label,desc,type,opts])=>`
+              <div class="settings-row">
+                <div class="settings-row-info">
+                  <div class="settings-row-label">${label}</div>
+                  <div class="settings-row-desc">${desc}</div>
+                </div>
+                ${type==='select'?`
+                  <select class="s-select">${opts.map((o,i)=>`<option${i===0?' selected':''}>${o}</option>`).join('')}</select>
+                `:`
+                  <label class="toggle">
+                    <input type="checkbox" />
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                `}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Save row -->
+        <div class="flex" style="justify-content:flex-end;margin-bottom:20px;">
+          <button class="btn btn-ghost btn-sm" style="margin-right:8px;">Cancel</button>
+          <button class="btn btn-primary">Save all changes</button>
+        </div>
+
+        <!-- Danger zone -->
+        <div class="danger-zone">
+          <div class="danger-zone-title">⚠️ Danger Zone</div>
+          <div class="danger-zone-desc">These actions are permanent and cannot be undone. Export your data before proceeding.</div>
+          <button class="btn-danger-outline">Export all data</button>
+          <button class="btn-danger-fill">Delete account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Screen switching ──
+function show(id, tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.s-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  if (tab) tab.classList.add('active');
+}
+
+// ── Auth toggle ──
+function switchAuth(mode) {
+  const loginEl  = document.getElementById('auth-right-login');
+  const regEl    = document.getElementById('auth-right-register');
+  if (mode === 'login') {
+    loginEl.style.display = 'flex';
+    regEl.style.display   = 'none';
+  } else {
+    loginEl.style.display = 'none';
+    regEl.style.display   = 'flex';
+  }
+}
+
+// ── Slide-over ──
+function openSlideover() {
+  document.getElementById('slideover').style.display = 'flex';
+  document.getElementById('slideover-backdrop').style.display = 'block';
+}
+function closeSlideover() {
+  document.getElementById('slideover').style.display = 'none';
+  document.getElementById('slideover-backdrop').style.display = 'none';
+}
+// Click any kanban card to open slide-over
+document.querySelectorAll('.k-card').forEach(card => {
+  card.addEventListener('click', openSlideover);
+});
+
+// ── Reference panel toggle ──
+function toggleRef() {
+  const panel = document.getElementById('ref-panel');
+  panel.classList.toggle('open');
+}
+
+// ── Toggle interactions ──
+document.querySelectorAll('.toggle').forEach(t => {
+  t.addEventListener('click', () => {
+    const input = t.querySelector('input');
+    // handled by native checkbox
+  });
+});
+
+// ── Task check toggle ──
+document.querySelectorAll('.task-check').forEach(check => {
+  check.addEventListener('click', (e) => {
+    e.stopPropagation();
+    check.classList.toggle('done');
+    const text = check.nextElementSibling;
+    if (text && text.classList.contains('task-text')) {
+      text.classList.toggle('done');
+    }
+  });
+});
+</script>
+</body>
+</html>
